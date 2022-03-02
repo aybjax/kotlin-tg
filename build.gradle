@@ -14,6 +14,12 @@ repositories {
 }
 
 dependencies {
+    implementation("org.jetbrains.exposed:exposed-core:0.37.3")
+    implementation("org.jetbrains.exposed:exposed-dao:0.37.3")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.37.3")
+    implementation("mysql:mysql-connector-java:8.0.20")
+    implementation 'org.flywaydb:flyway-core:8.5.1'
+
     implementation("com.squareup.moshi:moshi:1.13.0")
     kapt("com.squareup.moshi:moshi-kotlin-codegen:1.13.0")
     implementation("aws.sdk.kotlin:s3:0.9.4-beta")
