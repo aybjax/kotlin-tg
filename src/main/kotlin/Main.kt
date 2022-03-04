@@ -1,1 +1,5 @@
-fun main() = print("hello")
+import db.initDatabase
+
+fun main() {
+    initDatabase()
+}

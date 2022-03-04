@@ -1,3 +1,7 @@
 /build/**
 /.idea
 /.gradle
+.env
+17.json
+170.json
+Courses.json

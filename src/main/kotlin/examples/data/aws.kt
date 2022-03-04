@@ -1,20 +1,19 @@
-package data
+package examples.data
 
 import aws.sdk.kotlin.services.s3.S3Client
 import aws.sdk.kotlin.services.s3.model.GetObjectRequest
 import aws.smithy.kotlin.runtime.content.toByteArray
 import com.squareup.moshi.Moshi
-import kotlinx.coroutines.runBlocking
-import models.TestData
+import examples.models.TestData
 
-suspend fun getObjectBytes(bucketName: String, keyName: String) {
+suspend fun getObjectBytes(s3region: String, bucketName: String, keyName: String) {
 
     val request =  GetObjectRequest {
         key = keyName
         bucket= bucketName
     }
 
-    S3Client { region = "eu-central-1" }.use { s3 ->
+    S3Client { region = s3region }.use { s3 ->
         s3.getObject(request) { resp ->
             println("Successfully read $keyName from $bucketName")
 
@@ -34,9 +33,9 @@ suspend fun getObjectBytes(bucketName: String, keyName: String) {
 }
 
 
-fun main() = runBlocking {
-    getObjectBytes(
-        bucketName = "telegrambotaybjax",
-        keyName = "telegram.json",
-    )
-}
+//fun main() = runBlocking {
+//    getObjectBytes(
+//        bucketName = "telegrambotaybjax",
+//        keyName = "telegram.json",
+//    )
+//}

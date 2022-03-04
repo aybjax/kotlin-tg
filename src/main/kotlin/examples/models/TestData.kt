@@ -1,4 +1,4 @@
-package models
+package examples.models
 
 import com.squareup.moshi.JsonClass
 

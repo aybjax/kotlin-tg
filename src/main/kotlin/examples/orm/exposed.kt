@@ -1,12 +1,5 @@
-package orm
+package examples.orm
 
-import aws.sdk.kotlin.services.s3.S3Client
-import aws.sdk.kotlin.services.s3.model.GetObjectRequest
-import aws.smithy.kotlin.runtime.content.toByteArray
-import com.squareup.moshi.Moshi
-import kotlinx.coroutines.runBlocking
-import models.TestData
-import org.jetbrains.exposed.dao.Entity
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -14,7 +7,6 @@ import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.dao.load
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.io.File
 
 object Users : IntIdTable() {
     val name = varchar("name", length = 50) // Column<String>
