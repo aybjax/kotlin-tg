@@ -95,6 +95,8 @@ fun runDispatcherExample() {
                     text = markdownV2Text,
                     parseMode = ParseMode.MARKDOWN_V2
                 )
+
+
             }
 
             command("inlineButtons") {
