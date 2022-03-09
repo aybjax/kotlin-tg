@@ -43,8 +43,12 @@ fun initDatabase(omitMigration: Boolean = false) {
                                 MECHANICUM_COURSE_DIR + courseEntity.wd_id + JSON_EXTENSION
                             )
 
-                            awsCourseDto?.processDtos?.let { processes ->
+                            val processes = awsCourseDto?.processDtos?.let { processes ->
                                 ProcessEntity.fromProcessesCourseId(processes, courseEntity)
+                            }
+
+                            transaction {
+                                courseEntity.processes_count = processes?.size ?: -1
                             }
 
                             true

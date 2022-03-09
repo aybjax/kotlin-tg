@@ -21,7 +21,12 @@ fun listCourses(request: TgRequest) {
         if(page.value > pageCount) page = RequestPage(pageCount)
 
         query.limit(page.sqlLimit, page.sqlOffset).toList();
-    }.joinToString("\n") {
+    }
+
+    val min_id = courses.firstOrNull()?.id
+    val max_id = courses.lastOrNull()?.id
+
+    val coursesText = courses.joinToString("\n") {
         val description = it.description
 
         "${it.id}. *${it.name}* ${ if(description.isNotEmpty())
@@ -52,7 +57,7 @@ fun listCourses(request: TgRequest) {
     val inlineKeyboardMarkup = InlineKeyboardMarkup.create(buttons)
 
     request.bot.sendMessage(request.chatid,
-        text = courses,
+        text = coursesText,
         parseMode = ParseMode.MARKDOWN,
         replyMarkup = inlineKeyboardMarkup,
     )
@@ -62,7 +67,7 @@ fun listCourses(request: TgRequest) {
     if(! page.isNextLastPage(pageCount)) {
         jumpButtons.add(
             InlineKeyboardButton.CallbackData(
-                text = "Перепрыгнуть вперед",
+                text = "вперед",
                 callbackData = "forward-mechanicum-courses")
         )
     }
@@ -70,7 +75,7 @@ fun listCourses(request: TgRequest) {
     if(! page.isFirstPage()) {
         jumpButtons.add(
             InlineKeyboardButton.CallbackData(
-                text = "Перепрыгнуть назад",
+                text = "назад",
                 callbackData = "backwards-mechanicum-courses")
         )
     }
@@ -85,6 +90,8 @@ fun listCourses(request: TgRequest) {
     val userConfigurations = request.user.configurations
     userConfigurations?.previous_query = "mechanicum-courses"
     userConfigurations?.prev_page = page.value
+    userConfigurations?.course_min = min_id?.value
+    userConfigurations?.course_max = max_id?.value
 
     transaction {
         request.user.configurations = userConfigurations

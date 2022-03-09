@@ -7,9 +7,13 @@ import com.github.kotlintelegrambot.entities.ParseMode
 import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
 import constants.TELEGRAM_TOKEN
 import db.initDatabase
+import mechanicum.db.models.CourseEntity
+import mechanicum.db.models.ProcessEntity
+import mechanicum.db.models.Processes
 import mechanicum.listCourses
 import network.request.RequestType
 import network.request.TgRequest
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
 
 fun main() {
@@ -92,6 +96,113 @@ fun routeCallback(request: TgRequest) {
                         request.user.configurations = userConfigurations
                     }
                 }
+
+                "choose-mechanicum-course-id" -> {
+                    request.bot.sendMessage(request.chatid, text="_Введите номер курса_:",
+                        parseMode = ParseMode.MARKDOWN)
+
+                    val userConfigurations = request.user.configurations
+                    userConfigurations?.previous_query = "choose-mechanicum-course-id"
+
+                    transaction {
+                        request.user.configurations = userConfigurations
+                    }
+                }
+
+                "chosen-mechanicum-course-id" -> {
+                    val course = transaction {
+                        CourseEntity.findById(request.getQuery("course_id")?.toInt() ?: -1)
+                    }
+
+                    val msg = """
+                        _Номер курса:_ *${course?.id}*
+                        _Название курса:_ *${course?.name}*
+                        _Количество процессов:_ *${course?.processes_count}*
+                    """.trimIndent()
+
+                    val button = InlineKeyboardMarkup.create(listOf(
+                        InlineKeyboardButton.CallbackData("Начать курс" ,"start-mechanicum-course"),
+                    ))
+
+                    request.bot.sendMessage(
+                        request.chatid,
+                        msg,
+                        parseMode = ParseMode.MARKDOWN,
+                        replyMarkup = button,
+                    )
+                }
+
+                "start-mechanicum-course" -> {
+                    val nextOrder = request.user.configurations?.next_process_order ?: return
+                    val processCount = request.user.configurations?.total_processes ?: return
+                    val courseId = request.user.configurations?.course_id ?: return
+
+
+                    val process = transaction {
+                        ProcessEntity.find {
+                            (Processes.course eq courseId).and {
+                                (Processes.order eq nextOrder)
+                            }
+                        }.
+                            firstOrNull()
+                    }
+
+                    if(nextOrder > processCount) {
+                        val course = transaction {
+                            CourseEntity.findById(courseId)
+                        } ?: return
+
+                        request.bot.sendMessage(
+                            request.chatid,
+                            """
+                                Вы закончили курс *${course.name}*
+                            """.trimIndent(),
+                            parseMode = ParseMode.MARKDOWN,
+                        )
+
+                        val configurations = request.user.configurations
+                        configurations?.course_id = -1
+                        configurations?.next_process_order = -1
+                        configurations?.total_processes = -1
+
+                        transaction {
+                            request.user.configurations = configurations
+                        }
+
+                        return
+                    }
+
+                    val msg = """
+                        $nextOrder.
+                        *${process?.description?.trim()}*
+                        ${process?.detailing?.trim()}
+                    """.trimIndent()
+
+                    val buttons = InlineKeyboardMarkup.create(listOf(
+                        InlineKeyboardButton.CallbackData("Сделано", "start-mechanicum-course?action=done"),
+                        InlineKeyboardButton.CallbackData("Пропустить", "start-mechanicum-course")
+                    ))
+
+                    request.bot.sendMessage(
+                        request.chatid,
+                        msg,
+                        parseMode = ParseMode.MARKDOWN,
+                        replyMarkup = buttons,
+                    )
+
+                    val configurations = request.user.configurations
+                    configurations?.next_process_order = configurations?.next_process_order?.plus(1)
+
+                    request.getQuery("action")?.let {
+                        if(it == "done") {
+                            configurations?.correct_processes = configurations?.correct_processes?.plus(1) ?: 0
+                        }
+                    }
+
+                    transaction {
+                        request.user.configurations = configurations
+                    }
+                }
             }
         }
         RequestType.TEXT -> {
@@ -113,9 +224,39 @@ fun routeCallback(request: TgRequest) {
                         RequestType.CALLBACK,
                     )
                 }
+
+                "choose-mechanicum-course-id" -> {
+                    val id = request.route.toInt()
+                    val min = request.user.configurations?.course_min ?: -1;
+                    val max = request.user.configurations?.course_max ?: -1;
+
+                    if(min == -1 || max == -1) return;
+
+                    if (
+                        id < min || id > max
+                    ) {
+                        request.bot.sendMessage(
+                            chatId = request.chatid,
+                            text = "Номер курса должен быть между $min и $max, включительно"
+                        )
+
+                        return
+                    }
+
+                    request.updateRouteQuery("chosen-mechanicum-course-id?course_id=$id", RequestType.CALLBACK)
+                    val configurations = request.user.configurations
+                    configurations?.course_id = id;
+                    configurations?.next_process_order = 1;
+
+                    transaction {
+                        val course = CourseEntity.findById(id)
+                        configurations?.total_processes = course?.processes_count ?: 0
+                        request.user.configurations = configurations
+                    }
+                }
             }
 
-            routeCallback(request)
+            if(request.type == RequestType.CALLBACK) routeCallback(request)
         }
     }
 }

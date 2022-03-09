@@ -47,10 +47,13 @@ class User(id: EntityID<Int>): IntEntity(id)
 
     @JsonClass(generateAdapter = true)
     data class Configurations(
-        var is_on_course: Boolean = false,
-        var course_id: Int? = 0,
-        var process_id: Int? = 0,
         var previous_query: String? = null,
-        var prev_page: Long? = 0,
+        var prev_page: Long? = null,
+        var course_min: Int? = null,
+        var course_max: Int? = null,
+        var course_id: Int? = null,
+        var next_process_order: Int? = null,
+        var total_processes: Int = 0,
+        var correct_processes: Int = 0,
     )
 }

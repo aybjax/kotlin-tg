@@ -12,7 +12,9 @@ data class TgRequest(
     val bot: Bot,
     val chatid: ChatId,
 ) {
-    fun getQuery(key: String) = queries[key]
+    fun getQuery(key: String): String? {
+        return queries[key]
+    }
 
     fun updateRouteQuery(routeQuery: String, requestType: RequestType) {
         val (route, query) = parseRoute(routeQuery)
