@@ -47,9 +47,10 @@ class User(id: EntityID<Int>): IntEntity(id)
 
     @JsonClass(generateAdapter = true)
     data class Configurations(
-        val is_on_course: Boolean = false,
-        val course_id: Int? = 0,
-        val process_id: Int? = 0,
-        val previous_query: String? = null,
+        var is_on_course: Boolean = false,
+        var course_id: Int? = 0,
+        var process_id: Int? = 0,
+        var previous_query: String? = null,
+        var prev_page: Long? = 0,
     )
 }

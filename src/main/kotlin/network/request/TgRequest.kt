@@ -5,13 +5,22 @@ import com.github.kotlintelegrambot.entities.ChatId
 import db.models.User
 
 data class TgRequest(
+    var type: RequestType,
     val user: User,
-    val route: String,
-    val queries: Map<String, String>,
+    var route: String,
+    var queries: Map<String, String>,
     val bot: Bot,
     val chatid: ChatId,
 ) {
     fun getQuery(key: String) = queries[key]
+
+    fun updateRouteQuery(routeQuery: String, requestType: RequestType) {
+        val (route, query) = parseRoute(routeQuery)
+
+        this.route = route
+        this.queries = query
+        this.type = requestType
+    }
 
     override fun toString(): String {
         return "$route?" + queries.toSortedMap().map {
@@ -20,10 +29,23 @@ data class TgRequest(
     }
 
     companion object {
-        fun fromCallbackUser(callbackQuery: String, tg_user_id: Long, bot: Bot, chatId: ChatId): TgRequest {
+        fun fromCallbackUser(type: RequestType, callbackQuery: String, tg_user_id: Long, bot: Bot, chatId: ChatId): TgRequest {
             val user = User.getUser(tg_user_id)
 
-            val routeQuery = callbackQuery.split("?")
+            val (route, query) = parseRoute(callbackQuery)
+
+            return TgRequest(
+                type,
+                user,
+                route,
+                query,
+                bot,
+                chatId
+            )
+        }
+
+        fun parseRoute(route: String): Pair<String, Map<String, String>> {
+            val routeQuery = route.split("?")
 
             val route = routeQuery[0]
             val query = try {
@@ -37,13 +59,7 @@ data class TgRequest(
                 emptyMap<String, String>()
             }
 
-            return TgRequest(
-                user,
-                route,
-                query,
-                bot,
-                chatId
-            )
+            return route to query
         }
     }
 }
