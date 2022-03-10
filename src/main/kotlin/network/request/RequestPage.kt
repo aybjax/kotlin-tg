@@ -14,7 +14,11 @@ value class RequestPage(val value: Long) {
 
     inline fun isFirstPage() = value == 1L
 
-    inline fun isNextLastPage(pageCount: Long) = pageCount == value + 1
+    inline fun isNotFirstPage() = ! isFirstPage()
+
+    inline fun isNextLastPage(pageCount: Long) = pageCount <= value + 1
+
+    inline fun isNextNotLastPage(pageCount: Long) = ! isNextLastPage(pageCount)
 
     val next get() = value + 1
     val prev get() = value - 1

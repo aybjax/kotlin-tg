@@ -18,10 +18,11 @@ fun listCourses(request: TgRequest) {
         val query = CourseEntity.all()
         pageCount = page.getTotalPageCount(query.count())
 
-        if(page.value > pageCount) page = RequestPage(pageCount)
+        if(page.value > pageCount) page = RequestPage(pageCount-1)
 
         query.limit(page.sqlLimit, page.sqlOffset).toList();
     }
+    println(page.value)
 
     val min_id = courses.firstOrNull()?.id
     val max_id = courses.lastOrNull()?.id
@@ -30,7 +31,7 @@ fun listCourses(request: TgRequest) {
         val description = it.description
 
         "${it.id}. *${it.name}* ${ if(description.isNotEmpty())
-            "(`" else " "}$description${ if(description.isNotEmpty()) "`)" else ""}"
+            "(`" else " "}$description${ if(description.isNotEmpty()) "`)" else ""}\n\n"
     }
 
     val buttons = mutableListOf<InlineKeyboardButton>()
@@ -56,6 +57,19 @@ fun listCourses(request: TgRequest) {
 
     val inlineKeyboardMarkup = InlineKeyboardMarkup.create(buttons)
 
+    if(page.isFirstPage()) {
+        request.bot.sendMessage(request.chatid,
+            text = """
+                `Выберите номер курса в списке ниже.
+                Для перелистывания на предыдущую или следующую страницу нажмите соответствующие кнопки.
+                Для перелистывания на несколько страниц вперед ил назад нажмите соответствующие кнопки.`
+                
+                Список курсов:
+            """.trimIndent(),
+            parseMode = ParseMode.MARKDOWN,
+        )
+    }
+
     request.bot.sendMessage(request.chatid,
         text = coursesText,
         parseMode = ParseMode.MARKDOWN,
@@ -64,7 +78,7 @@ fun listCourses(request: TgRequest) {
 
     val jumpButtons = mutableListOf<InlineKeyboardButton>()
 
-    if(! page.isNextLastPage(pageCount)) {
+    if(page.isNextNotLastPage(pageCount)) {
         jumpButtons.add(
             InlineKeyboardButton.CallbackData(
                 text = "вперед",
@@ -72,7 +86,7 @@ fun listCourses(request: TgRequest) {
         )
     }
 
-    if(! page.isFirstPage()) {
+    if(page.isNotFirstPage()) {
         jumpButtons.add(
             InlineKeyboardButton.CallbackData(
                 text = "назад",
@@ -81,7 +95,9 @@ fun listCourses(request: TgRequest) {
     }
 
     request.bot.sendMessage(request.chatid,
-        text = "Перепрыгнуть страницы",
+        text = """
+            Перелистать страницы:
+        """.trimIndent(),
         replyMarkup = InlineKeyboardMarkup.create(
             jumpButtons
         ),

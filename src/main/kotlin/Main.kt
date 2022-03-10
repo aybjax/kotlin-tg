@@ -11,6 +11,7 @@ import mechanicum.db.models.CourseEntity
 import mechanicum.db.models.ProcessEntity
 import mechanicum.db.models.Processes
 import mechanicum.listCourses
+import mechanicum.start
 import network.request.RequestType
 import network.request.TgRequest
 import org.jetbrains.exposed.sql.and
@@ -25,29 +26,32 @@ fun main() {
 
         dispatch {
             command("start") {
-                val markdownV2Text = """
-                    Вас приветствует ассистент телеграм бот VargatesBot
-                    Для продолжения *выберите продукт*
-                """.trimIndent()
+                val chatId = message?.chat?.id ?: return@command
 
-                val inlineKeyboardMarkup = InlineKeyboardMarkup.create(
-                    listOf(InlineKeyboardButton.CallbackData(text = "Выбрать Mechanicum",
-                        callbackData = "mechanicum-courses")),
-                )
-                bot.sendMessage(
-                    chatId = ChatId.fromId(message.chat.id),
-                    text = markdownV2Text,
-                    parseMode = ParseMode.MARKDOWN_V2,
-                    replyMarkup = inlineKeyboardMarkup,
-                )
+                val request = TgRequest.fromCallbackUser(RequestType.TEXT,
+                    "/start", chatId, bot, ChatId.fromId(chatId));
+
+                start(request)
             }
 
             text {
                 val chatId = message?.chat?.id ?: return@text
 //                val userId = message?.from?.id ?: return@text // both are same
 
+                var text = text.split(" ")[0].lowercase()
+
+                if(text == "начать") {
+                    text = "/start"
+                }
+
                 val request = TgRequest.fromCallbackUser(RequestType.TEXT,
-                    text.split(" ")[0], chatId, bot, ChatId.fromId(chatId));
+                    text, chatId, bot, ChatId.fromId(chatId));
+
+                if(text == "/start") {
+                    start(request)
+
+                    return@text
+                }
 
                 routeCallback(request)
             }
@@ -74,7 +78,7 @@ fun routeCallback(request: TgRequest) {
                 }
 
                 "forward-mechanicum-courses" -> {
-                    request.bot.sendMessage(request.chatid, text="_Введите кол-во прыжка_:",
+                    request.bot.sendMessage(request.chatid, text="_Введите кол-во страниц для перелистывания_:",
                         parseMode = ParseMode.MARKDOWN)
 
                     val userConfigurations = request.user.configurations
@@ -86,7 +90,7 @@ fun routeCallback(request: TgRequest) {
                 }
 
                 "backwards-mechanicum-courses" -> {
-                    request.bot.sendMessage(request.chatid, text="_Введите кол-во прыжка_:",
+                    request.bot.sendMessage(request.chatid, text="_Введите кол-во страниц для перелистывания_:",
                         parseMode = ParseMode.MARKDOWN)
 
                     val userConfigurations = request.user.configurations
@@ -147,6 +151,20 @@ fun routeCallback(request: TgRequest) {
                             firstOrNull()
                     }
 
+
+                    val configurations = request.user.configurations
+                    configurations?.next_process_order = configurations?.next_process_order?.plus(1)
+
+                    request.getQuery("action")?.let {
+                        if(it == "done") {
+                            configurations?.correct_processes = configurations?.correct_processes?.plus(1) ?: 0
+                        }
+                    }
+
+                    transaction {
+                        request.user.configurations = configurations
+                    }
+
                     if(nextOrder > processCount) {
                         val course = transaction {
                             CourseEntity.findById(courseId)
@@ -161,9 +179,22 @@ fun routeCallback(request: TgRequest) {
                         )
 
                         val configurations = request.user.configurations
-                        configurations?.course_id = -1
-                        configurations?.next_process_order = -1
+                        val correct = configurations?.correct_processes ?: 0
+                        val total = configurations?.total_processes ?: -1
+
+
+                        request.bot.sendMessage(
+                            request.chatid,
+                            """
+                                Результат: $correct из $total (${correct.toDouble()/total.toDouble() * 100}%)
+                            """.trimIndent(),
+                            parseMode = ParseMode.MARKDOWN,
+                        )
+
+                        configurations?.course_id = null
+                        configurations?.next_process_order = null
                         configurations?.total_processes = -1
+                        configurations?.correct_processes = 0
 
                         transaction {
                             request.user.configurations = configurations
@@ -189,19 +220,6 @@ fun routeCallback(request: TgRequest) {
                         parseMode = ParseMode.MARKDOWN,
                         replyMarkup = buttons,
                     )
-
-                    val configurations = request.user.configurations
-                    configurations?.next_process_order = configurations?.next_process_order?.plus(1)
-
-                    request.getQuery("action")?.let {
-                        if(it == "done") {
-                            configurations?.correct_processes = configurations?.correct_processes?.plus(1) ?: 0
-                        }
-                    }
-
-                    transaction {
-                        request.user.configurations = configurations
-                    }
                 }
             }
         }
@@ -247,6 +265,7 @@ fun routeCallback(request: TgRequest) {
                     val configurations = request.user.configurations
                     configurations?.course_id = id;
                     configurations?.next_process_order = 1;
+                    configurations?.correct_processes = 0;
 
                     transaction {
                         val course = CourseEntity.findById(id)
