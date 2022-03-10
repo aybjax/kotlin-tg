@@ -7,6 +7,7 @@ import com.github.kotlintelegrambot.entities.ParseMode
 import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
 import constants.TELEGRAM_TOKEN
 import db.initDatabase
+import extensions.roundDecimal
 import mechanicum.db.models.CourseEntity
 import mechanicum.db.models.ProcessEntity
 import mechanicum.db.models.Processes
@@ -186,7 +187,7 @@ fun routeCallback(request: TgRequest) {
                         request.bot.sendMessage(
                             request.chatid,
                             """
-                                Результат: $correct из $total (${correct.toDouble()/total.toDouble() * 100}%)
+                                Результат: $correct из $total (${(correct.toDouble()/total.toDouble() * 100).roundDecimal()}%)
                             """.trimIndent(),
                             parseMode = ParseMode.MARKDOWN,
                         )
