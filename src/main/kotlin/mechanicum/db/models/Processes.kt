@@ -4,6 +4,7 @@ import examples.orm.Cities
 import examples.orm.City
 import examples.orm.Users
 import examples.orm.Users.nullable
+import extensions.shrink
 import mechanicum.dto.aws_course.ProcessDto
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
@@ -31,8 +32,8 @@ class  ProcessEntity(id: EntityID<Int>): IntEntity(id) {
                             result.add(
                                 ProcessEntity.new {
                                     course = courseEntity
-                                    description = process.description
-                                    detailing = process.detailing
+                                    description = process.description.shrink()
+                                    detailing = process.detailing.shrink()
                                     order = idx
                                 }
                             )

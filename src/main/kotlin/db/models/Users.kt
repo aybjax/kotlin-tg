@@ -53,7 +53,7 @@ class User(id: EntityID<Int>): IntEntity(id)
         var course_max: Int? = null,
         var course_id: Int? = null,
         var next_process_order: Int? = null,
-        var total_processes: Int = 0,
-        var correct_processes: Int = 0,
+        var total_processes: Int? = null,
+        var correct_processes: Int? = null,
     )
 }

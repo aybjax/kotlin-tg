@@ -1,5 +1,6 @@
 package mechanicum.db.models
 
+import extensions.shrink
 import mechanicum.dto.aws_course.CourseDto
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
@@ -27,11 +28,11 @@ class CourseEntity(id: EntityID<Int>): IntEntity(id) {
                 result = CourseEntity.new {
                     wd_id = courseDto.id
                     type = courseDto.type
-                    name = courseDto.name
-                    description = courseDto.description ?: ""
+                    name = courseDto.name.shrink()
+                    description = courseDto.description?.shrink() ?: ""
                     processes_count = courseDto.processes_count
                     category_id = courseDto.category_id
-                    category_name = courseDto.category_name
+                    category_name = courseDto.category_name?.shrink()
                 }
             }
 

@@ -1,7 +1,7 @@
 package network.request
 
 @JvmInline
-value class RequestPage(val value: Long) {
+value class RequestPage(val value: Long = 1L) {
     companion object {
         fun fromQuery(pageNumber: String?): RequestPage {
             var page = pageNumber?.toLong() ?: 1;
@@ -12,13 +12,13 @@ value class RequestPage(val value: Long) {
         }
     }
 
-    inline fun isFirstPage() = value == 1L
+    fun isFirstPage() = value == 1L
 
-    inline fun isNotFirstPage() = ! isFirstPage()
+    fun isNotFirstPage() = ! isFirstPage()
 
-    inline fun isNextLastPage(pageCount: Long) = pageCount <= value + 1
+    infix fun lastPageFor(pageCount: Long) = pageCount <= value + 1
 
-    inline fun isNextNotLastPage(pageCount: Long) = ! isNextLastPage(pageCount)
+    infix fun notLastPageFor(pageCount: Long) = ! lastPageFor(pageCount)
 
     val next get() = value + 1
     val prev get() = value - 1
@@ -26,5 +26,13 @@ value class RequestPage(val value: Long) {
     val sqlLimit get() = 5
     val sqlOffset get() = (value - 1) * sqlLimit
 
-    inline fun getTotalPageCount(itemsCount: Long) = itemsCount / 5 + if(itemsCount % 5 > 0) 2 else 1
+    fun getTotalPageCount(itemsCount: Long) = itemsCount / 5 + if(itemsCount % 5 > 0) 2 else 1
+
+    operator fun dec(): RequestPage {
+        return RequestPage(value-1)
+    }
+
+    operator fun inc(): RequestPage {
+        return RequestPage(value+1)
+    }
 }

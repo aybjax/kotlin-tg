@@ -7,25 +7,27 @@ import mechanicum.db.models.CourseEntity
 import network.request.RequestPage
 import network.request.TgRequest
 import org.jetbrains.exposed.sql.transactions.transaction
+import kotlin.properties.Delegates
 
 fun listCourses(request: TgRequest) {
-    var page = RequestPage(1L);
-    var pageCount: Long = 0L;
+    var page = RequestPage();
+    var pageCount by Delegates.notNull<Long>()
 
     val courses = transaction {
-        page = RequestPage.fromQuery(request.getQuery("page"));
+        page = RequestPage.fromQuery(request.getQueryOrNull("page"));
 
         val query = CourseEntity.all()
         pageCount = page.getTotalPageCount(query.count())
 
-        if(page.value > pageCount) page = RequestPage(pageCount-1)
+        if(page.value > pageCount) page = --page
 
         query.limit(page.sqlLimit, page.sqlOffset).toList();
     }
+
     println(page.value)
 
-    val min_id = courses.firstOrNull()?.id
-    val max_id = courses.lastOrNull()?.id
+    val minId = courses.firstOrNull()?.id
+    val maxId = courses.lastOrNull()?.id
 
     val coursesText = courses.joinToString("\n") {
         val description = it.description
@@ -36,7 +38,7 @@ fun listCourses(request: TgRequest) {
 
     val buttons = mutableListOf<InlineKeyboardButton>()
 
-    if(! page.isFirstPage()) {
+    if(page.isNotFirstPage()) {
         buttons.add(
             InlineKeyboardButton.CallbackData(text = "Предыдущий",
                 callbackData = "mechanicum-courses?page=${page.prev}")
@@ -48,7 +50,7 @@ fun listCourses(request: TgRequest) {
             callbackData = "choose-mechanicum-course-id"),
     )
 
-    if(! page.isNextLastPage(pageCount)) {
+    if(page notLastPageFor pageCount) {
         buttons.add(
             InlineKeyboardButton.CallbackData(text = "Следующий",
                 callbackData = "mechanicum-courses?page=${page.next}")
@@ -59,13 +61,20 @@ fun listCourses(request: TgRequest) {
 
     if(page.isFirstPage()) {
         request.bot.sendMessage(request.chatid,
-            text = """
-                `Выберите номер курса в списке ниже.
-                Для перелистывания на предыдущую или следующую страницу нажмите соответствующие кнопки.
-                Для перелистывания на несколько страниц вперед ил назад нажмите соответствующие кнопки.`
-                
-                Список курсов:
-            """.trimIndent(),
+            text = buildString {
+               append(
+                   "`Выберите номер курса в списке ниже.\n"
+               )
+                append(
+                    "Для перелистывания на предыдущую или следующую страницу нажмите соответствующие кнопки.\n"
+                )
+                append(
+                    "Для перелистывания на несколько страниц вперед ил назад нажмите соответствующие кнопки.`\n"
+                )
+                append(
+                    "Список курсов:"
+                )
+            },
             parseMode = ParseMode.MARKDOWN,
         )
     }
@@ -78,7 +87,7 @@ fun listCourses(request: TgRequest) {
 
     val jumpButtons = mutableListOf<InlineKeyboardButton>()
 
-    if(page.isNextNotLastPage(pageCount)) {
+    if(page notLastPageFor pageCount) {
         jumpButtons.add(
             InlineKeyboardButton.CallbackData(
                 text = "вперед",
@@ -106,8 +115,8 @@ fun listCourses(request: TgRequest) {
     val userConfigurations = request.user.configurations
     userConfigurations?.previous_query = "mechanicum-courses"
     userConfigurations?.prev_page = page.value
-    userConfigurations?.course_min = min_id?.value
-    userConfigurations?.course_max = max_id?.value
+    userConfigurations?.course_min = minId?.value
+    userConfigurations?.course_max = maxId?.value
 
     transaction {
         request.user.configurations = userConfigurations

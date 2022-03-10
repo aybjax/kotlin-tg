@@ -3,6 +3,10 @@ package network.request
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.entities.ChatId
 import db.models.User
+import extensions.intOrDefault
+import extensions.longOrDefault
+import extensions.tryInt
+import extensions.tryLong
 
 data class TgRequest(
     var type: RequestType,
@@ -12,8 +16,26 @@ data class TgRequest(
     val bot: Bot,
     val chatid: ChatId,
 ) {
-    fun getQuery(key: String): String? {
-        return queries[key]
+    inline fun <reified T> getQueryOrNull(key: String): T? {
+        val result = queries[key] ?: ""
+
+        return when(T::class.java) {
+            String::class.java -> result as? T
+            Int::class.java -> result.tryInt() as? T
+            Long::class.java -> result.tryLong() as? T
+            else -> throw Exception("Type is not supported")
+        }
+    }
+
+    inline fun <reified T> getQuery(key: String): T {
+        val result = queries[key] ?: ""
+
+        return when(T::class.java) {
+            String::class.java -> result as T
+            Int::class.java -> result.intOrDefault() as T
+            Long::class.java -> result.longOrDefault() as T
+            else -> throw Exception("Type is not supported")
+        }
     }
 
     fun updateRouteQuery(routeQuery: String, requestType: RequestType) {

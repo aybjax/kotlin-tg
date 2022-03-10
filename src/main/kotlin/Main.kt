@@ -7,6 +7,8 @@ import com.github.kotlintelegrambot.entities.ParseMode
 import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
 import constants.TELEGRAM_TOKEN
 import db.initDatabase
+import extensions.normalizedWord
+import extensions.plusOne
 import extensions.roundDecimal
 import mechanicum.db.models.CourseEntity
 import mechanicum.db.models.ProcessEntity
@@ -26,20 +28,11 @@ fun main() {
         timeout = 30
 
         dispatch {
-            command("start") {
-                val chatId = message?.chat?.id ?: return@command
-
-                val request = TgRequest.fromCallbackUser(RequestType.TEXT,
-                    "/start", chatId, bot, ChatId.fromId(chatId));
-
-                start(request)
-            }
-
             text {
                 val chatId = message?.chat?.id ?: return@text
 //                val userId = message?.from?.id ?: return@text // both are same
 
-                var text = text.split(" ")[0].lowercase()
+                var text = text.normalizedWord()
 
                 if(text == "начать") {
                     text = "/start"
@@ -116,7 +109,7 @@ fun routeCallback(request: TgRequest) {
 
                 "chosen-mechanicum-course-id" -> {
                     val course = transaction {
-                        CourseEntity.findById(request.getQuery("course_id")?.toInt() ?: -1)
+                        CourseEntity.findById(request.getQuery<Int>("course_id"))
                     }
 
                     val msg = """
@@ -154,11 +147,11 @@ fun routeCallback(request: TgRequest) {
 
 
                     val configurations = request.user.configurations
-                    configurations?.next_process_order = configurations?.next_process_order?.plus(1)
+                    configurations?.next_process_order = configurations?.next_process_order?.plusOne()
 
-                    request.getQuery("action")?.let {
+                    request.getQueryOrNull<String>("action")?.let {
                         if(it == "done") {
-                            configurations?.correct_processes = configurations?.correct_processes?.plus(1) ?: 0
+                            configurations?.correct_processes = configurations?.correct_processes?.plusOne()
                         }
                     }
 
@@ -187,7 +180,8 @@ fun routeCallback(request: TgRequest) {
                         request.bot.sendMessage(
                             request.chatid,
                             """
-                                Результат: $correct из $total (${(correct.toDouble()/total.toDouble() * 100).roundDecimal()}%)
+                                Результат: $correct из $total (${(correct.toDouble()/total.toDouble() * 100).
+                                                                                                    roundDecimal()}%)
                             """.trimIndent(),
                             parseMode = ParseMode.MARKDOWN,
                         )
@@ -246,10 +240,8 @@ fun routeCallback(request: TgRequest) {
 
                 "choose-mechanicum-course-id" -> {
                     val id = request.route.toInt()
-                    val min = request.user.configurations?.course_min ?: -1;
-                    val max = request.user.configurations?.course_max ?: -1;
-
-                    if(min == -1 || max == -1) return;
+                    val min = request.user.configurations?.course_min ?: return;
+                    val max = request.user.configurations?.course_max ?: return;
 
                     if (
                         id < min || id > max
