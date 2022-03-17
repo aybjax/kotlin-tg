@@ -5,8 +5,8 @@ import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import mechanicum.constants.*
-import mechanicum.db.models.CourseEntity
-import mechanicum.db.models.ProcessEntity
+import mechanicum.db.models.CourseDao
+import mechanicum.db.models.ProcessDao
 import mechanicum.db.transactions.initMechanicumTables
 import mechanicum.dto.AwsCourseDto
 import mechanicum.dto.AwsCoursesDto
@@ -15,6 +15,11 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 
+/**
+ * Connects to database and
+ *    Drops and migrates and pull data from AWS
+ * if omitMigration, then does not alter table
+ */
 fun initDatabase(omitMigration: Boolean = false) {
     Database.connect("jdbc:mysql://localhost:3306/kotlintg?&serverTimezone=UTC", driver = "com.mysql.cj.jdbc.Driver",
         user = "root", password = dotenv()["ps"],
@@ -33,22 +38,22 @@ fun initDatabase(omitMigration: Boolean = false) {
 
         val result = bucket.getBucketObject<AwsCoursesDto>(MECHANICUM_COURSES_FILE_FULL_PATH)
         result?.let { awsCourses ->
-            awsCourses.cours.forEach { course ->
-                CourseEntity.fromCourse(course)?.let { courseEntity ->
+            awsCourses.course.forEach { course ->
+                CourseDao.fromCourse(course)?.let { courseEntity ->
                     var isFetched = false
 
                     while(!isFetched) {
                         isFetched = try {
                             val awsCourseDto = bucket.getBucketObject<AwsCourseDto>(
-                                MECHANICUM_COURSE_DIR + courseEntity.wd_id + JSON_EXTENSION
+                                MECHANICUM_COURSE_DIR + courseEntity.wdId + JSON_EXTENSION
                             )
 
                             val processes = awsCourseDto?.processDtos?.let { processes ->
-                                ProcessEntity.fromProcessesCourseId(processes, courseEntity)
+                                ProcessDao.fromProcessesCourseId(processes, courseEntity)
                             }
 
                             transaction {
-                                courseEntity.processes_count = processes?.size ?: -1
+                                courseEntity.processesCount = processes?.size ?: -1
                             }
 
                             true

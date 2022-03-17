@@ -1,5 +1,6 @@
 package db.models
 
+import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.Moshi
 import org.jetbrains.exposed.dao.IntEntity
@@ -8,27 +9,40 @@ import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.transactions.transaction
 
+/**
+ * Users table represented with Exposed library
+ */
 object Users: IntIdTable() {
-    val tg_user_id = long("tg_user_id").uniqueIndex()
-    val json_configurations = text("configurations")
+    val userId = long("tg_user_id").uniqueIndex()
+    val jsonConfigurations = text("configurations")
 }
 
+/**
+ * User Dao
+ */
 class User(id: EntityID<Int>): IntEntity(id)
 {
     companion object: IntEntityClass<User>(Users) {
-        val configurations_adapter = Moshi.Builder().build().adapter(Configurations::class.java)
+        /**
+         * Moshi adapter for configuration object
+         */
+        val configurationsAdapter: JsonAdapter<Configurations> = Moshi.Builder().
+                                                                    build().adapter(Configurations::class.java)
 
-        fun getUser(tg_id: Long): User {
+        /**
+         * Get User Dao with telegram chat id
+         */
+        fun getUser(user_id: Long): User {
             return transaction {
                 User.find {
-                    Users.tg_user_id eq tg_id
+                    Users.userId eq user_id
                 }.firstOrNull()?.let {
                     return@transaction it
                 }
 
                 return@transaction transaction {
                     User.new {
-                        tg_user_id = tg_id
+                        this.userId = user_id
                         configurations = Configurations()
                     }
                 }
@@ -36,24 +50,38 @@ class User(id: EntityID<Int>): IntEntity(id)
         }
     }
 
-    var tg_user_id by Users.tg_user_id
-    var json_configurations by Users.json_configurations
+    var userId by Users.userId
+    var jsonConfigurations by Users.jsonConfigurations
 
     var configurations: Configurations?
-        get() = configurations_adapter.fromJson(json_configurations)
+        get() = configurationsAdapter.fromJson(jsonConfigurations)
         set(value) {
-            json_configurations = configurations_adapter.toJson(value)
+            jsonConfigurations = configurationsAdapter.toJson(value)
         }
 
+    /**
+     * Request session/cookie like class
+     */
     @JsonClass(generateAdapter = true)
     data class Configurations(
         var previous_query: String? = null,
         var prev_page: Long? = null,
-        var course_min: Int? = null,
-        var course_max: Int? = null,
+        var course_ids: List<Int>? = null,
         var course_id: Int? = null,
         var next_process_order: Int? = null,
         var total_processes: Int? = null,
         var correct_processes: Int? = null,
+        var searchName: String? = null,
     )
+
+    /**
+     * Updates current (or if absent new) configuration and returns it
+     */
+    fun updateConfiguration(callback: (Configurations) -> Configurations): Configurations? {
+        return transaction {
+            configurations = callback(configurations ?: Configurations())
+
+            configurations
+        }
+    }
 }

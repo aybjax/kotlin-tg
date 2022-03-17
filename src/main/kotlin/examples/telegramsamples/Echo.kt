@@ -4,13 +4,13 @@ import com.github.kotlintelegrambot.bot
 import com.github.kotlintelegrambot.dispatch
 import com.github.kotlintelegrambot.dispatcher.text
 import com.github.kotlintelegrambot.entities.ChatId
-import constants.TELEGRAM_TOKEN
+import constants.MECHANICUM_TELEGRAM_TOKEN
 
 fun runEchoExample() {
 
     val bot = bot {
 
-        token = TELEGRAM_TOKEN
+        token = MECHANICUM_TELEGRAM_TOKEN
 
         dispatch {
 

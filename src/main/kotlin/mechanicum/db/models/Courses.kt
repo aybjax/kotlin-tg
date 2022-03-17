@@ -2,14 +2,20 @@ package mechanicum.db.models
 
 import extensions.shrink
 import mechanicum.dto.aws_course.CourseDto
+import network.req_resp.RequestPage
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.lowerCase
 import org.jetbrains.exposed.sql.transactions.transaction
+import kotlin.properties.Delegates
 
+/**
+ * Courses table represented with Exposed
+ */
 object Courses: IntIdTable() {
-    val wd_id = integer("wd_id").uniqueIndex()
+    val wdId = integer("wd_id").uniqueIndex()
     val type = varchar("type", length = 20)
     val name = varchar("name", length = 100)
     val description = text("description")
@@ -18,33 +24,78 @@ object Courses: IntIdTable() {
     val category_name = varchar("category_name", length = 50)
 }
 
-class CourseEntity(id: EntityID<Int>): IntEntity(id) {
-    companion object: IntEntityClass<CourseEntity>(Courses) {
-        fun fromCourse(courseDto: CourseDto): CourseEntity?
+/**
+ * Courses Dao
+ */
+class CourseDao(id: EntityID<Int>): IntEntity(id) {
+    companion object: IntEntityClass<CourseDao>(Courses) {
+        /**
+         * Create CourseDao from aws courseDao
+         */
+        fun fromCourse(courseDto: CourseDto): CourseDao?
         {
-            var result: CourseEntity? = null
+            var result: CourseDao? = null
 
             transaction {
-                result = CourseEntity.new {
-                    wd_id = courseDto.id
+                result = CourseDao.new {
+                    wdId = courseDto.id
                     type = courseDto.type
                     name = courseDto.name.shrink()
                     description = courseDto.description?.shrink() ?: ""
-                    processes_count = courseDto.processes_count
-                    category_id = courseDto.category_id
-                    category_name = courseDto.category_name?.shrink()
+                    processesCount = courseDto.processes_count
+                    categoryId = courseDto.category_id
+                    categoryName = courseDto.category_name?.shrink()
                 }
             }
 
             return result
         }
+
+        /**
+         * Returns courses list, current page and number all pages
+         */
+        fun getCoursePageCount(nameLike: String? = null, page: RequestPage): CoursePageCount {
+            var pageCount by Delegates.notNull<Long>()
+            var localPage = page
+
+            val courses = transaction {
+                var query = if(nameLike.isNullOrBlank()) {
+                    CourseDao.all()
+                } else {
+                    CourseDao.find {
+                        Courses.name.lowerCase() like nameLike
+                    }
+                }
+
+                pageCount = page.getTotalPageCount(query.count())
+
+                if(page.value > pageCount) localPage = localPage makeLessThan pageCount
+
+                query.limit(page.sqlLimit, page.sqlOffset).toList();
+            }
+
+            return CoursePageCount(
+                courses,
+                localPage,
+                pageCount,
+            )
+        }
     }
 
-    var wd_id by Courses.wd_id
+    var wdId by Courses.wdId
     var type by Courses.type
     var name by Courses.name
     var description by Courses.description
-    var processes_count by Courses.processes_count
-    var category_id by Courses.category_id
-    var category_name by Courses.category_name
+    var processesCount by Courses.processes_count
+    var categoryId by Courses.category_id
+    var categoryName by Courses.category_name
+
+    /**
+     * used solely for getCoursePageCount
+     */
+    data class CoursePageCount(
+        val courses: List<CourseDao>,
+        val page: RequestPage,
+        val pageCount: Long,
+    )
 }

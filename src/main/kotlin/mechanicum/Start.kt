@@ -1,26 +1,24 @@
 package mechanicum
 
-import com.github.kotlintelegrambot.entities.ChatId
-import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
-import com.github.kotlintelegrambot.entities.ParseMode
-import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
-import network.request.TgRequest
+import db.models.User
+import network.req_resp.Anchor
+import network.req_resp.Request
+import org.jetbrains.exposed.sql.transactions.transaction
 
-fun start(request: TgRequest) {
-    val markdownV2Text = """
-                    Вас приветствует ассистент телеграм бот VargatesBot
-                    
-                    Для продолжения *выберите продукт*
-                """.trimIndent()
+/**
+ * Welcome message
+ */
+fun home(request: Request): Boolean {
+    val text = "Вас приветствует ассистент телеграм бот *VargatesBot*"
 
-    val inlineKeyboardMarkup = InlineKeyboardMarkup.create(
-        listOf(InlineKeyboardButton.CallbackData(text = "Выбрать Mechanicum",
-            callbackData = "mechanicum-courses")),
-    )
-    request.bot.sendMessage(
-        chatId = request.chatid,
-        text = markdownV2Text,
-        parseMode = ParseMode.MARKDOWN_V2,
-        replyMarkup = inlineKeyboardMarkup,
-    )
+    request.writeLink(text, listOf(
+        Anchor(text = "Личный кабинет", link = "account-page"),
+        Anchor(text = "Выбрать Продукт", link = "choose-product"),
+    ))
+
+    transaction {
+        request.user.updateConfiguration { User.Configurations() }
+    }
+
+    return false;
 }

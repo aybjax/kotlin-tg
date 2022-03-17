@@ -3,6 +3,9 @@ package mechanicum.dto.aws_course
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
+/**
+ * AWS Course DTO
+ */
 @JsonClass(generateAdapter = true)
 data class CourseDto(
     @Json(name = "wd_id")
