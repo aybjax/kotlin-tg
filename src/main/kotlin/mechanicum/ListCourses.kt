@@ -26,7 +26,7 @@ fun listCourses(request: CallbackRequest): Boolean {
     val anchors = mutableListOf<Anchor>()
     if(page.isNotFirstPage()) {
         anchors.add(
-            Anchor(text = "Предыдущий", link = "mechanicum-courses?page=${page.prev}")
+            Anchor(text = "<<", link = "mechanicum-courses?page=${page.prev}")
         )
     }
     anchors.add(
@@ -34,7 +34,7 @@ fun listCourses(request: CallbackRequest): Boolean {
     )
     if(page notLastPageFor pageCount) {
         anchors.add(
-            Anchor(text = "Следующий", link = "mechanicum-courses?page=${page.next}")
+            Anchor(text = ">>", link = "mechanicum-courses?page=${page.next}")
         )
     }
 
@@ -48,7 +48,7 @@ fun listCourses(request: CallbackRequest): Boolean {
         request.writeText(text)
     }
 
-    request.writeLink(coursesText, anchors)
+//    request.writeLink(coursesText, anchors)
 
     val jumpButtons = mutableListOf<Anchor>()
 
@@ -65,7 +65,7 @@ fun listCourses(request: CallbackRequest): Boolean {
     }
 
     if(courses.isNotEmpty()) {
-        request.writeLink("Перелистать страницы:", jumpButtons)
+//        request.writeLink("Перелистать страницы:", jumpButtons)
     }
     else {
         request.writeLink("*Ничего не найдено*", jumpButtons)
@@ -77,7 +77,14 @@ fun listCourses(request: CallbackRequest): Boolean {
         buttons.add(Anchor(text = "Отменить поиск", link = "mechanicum-search-name-cancel"))
     }
 
-    request.writeLink("Поиск по названию:", buttons)
+//    request.writeLink("Поиск по названию:", buttons)
+
+    request.writeLink(coursesText, listOf(
+        anchors,
+        jumpButtons,
+        buttons,
+    ))
+
 
     request.user.updateConfiguration {
         it.prev_page = page.value
