@@ -29,18 +29,22 @@ fun routeCallback(request: CallbackRequest) {
         }
 
         "choose-product" -> {
-            request.writeText("Выберите продукт:")
-            request.writeLink("*Mechanicum*", listOf(
-                Anchor(text = "Выбрать Mechanicum", link = "mechanicum-courses")
-            ))
-            request.writeLink("*Academix*", listOf(
-                Anchor(text = "Выбрать Academix", link = "academix-courses")
-            ))
-            request.writeLink("*Dimedus*", listOf(
-                Anchor(text = "Выбрать Dimedus", link = "dimedus-courses")
-            ))
-            request.writeLink("*Roqed*", listOf(
-                Anchor(text = "Выбрать Roqed", link = "roqed-courses")
+            request.writeLink("*Выберите продукт*:", listOf(
+                listOf(
+                    Anchor(text = "Mechanicum", link = "mechanicum-courses")
+                ),
+                listOf(
+                    Anchor(text = "Mechanicum", link = "mechanicum-courses")
+                ),
+                listOf(
+                    Anchor(text = "Academix", link = "academix-courses")
+                ),
+                listOf(
+                    Anchor(text = "Dimedus", link = "dimedus-courses")
+                ),
+                listOf(
+                    Anchor(text = "Roqed", link = "roqed-courses")
+                )
             ))
 
             true

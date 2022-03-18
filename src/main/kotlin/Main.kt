@@ -6,6 +6,7 @@ import com.github.kotlintelegrambot.logging.LogLevel
 import constants.MECHANICUM_TELEGRAM_TOKEN
 import db.initDatabase
 import db.models.User
+import examples.telegramsamples.runDispatcherExample
 import network.req_resp.CallbackRequest
 import network.req_resp.TextRequest
 import network.route.Layout
@@ -22,7 +23,6 @@ fun main() {
 
         dispatch {
             text {
-//                val chatId = message?.chat?.id ?: return@text
                 val chat = message?.chat ?: return@text
 
                 val userDto = User.About.fromChat(chat)
@@ -33,7 +33,6 @@ fun main() {
             }
 
             callbackQuery() {
-//                val chatId = callbackQuery.message?.chat?.id ?: return@callbackQuery
                 val chat = callbackQuery.message?.chat ?: return@callbackQuery
 
                 val userDto = User.About.fromChat(chat)

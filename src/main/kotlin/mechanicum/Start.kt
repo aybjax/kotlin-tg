@@ -12,13 +12,15 @@ fun home(request: Request): Boolean {
     val text = "Вас приветствует ассистент телеграм бот *VargatesBot*"
 
     request.writeLink(text, listOf(
-        Anchor(text = "Личный кабинет", link = "account-page"),
-        Anchor(text = "Выбрать Продукт", link = "choose-product"),
+        listOf(Anchor(text = "Личный кабинет", link = "account-page")),
+        listOf(Anchor(text = "Выбрать Продукт", link = "choose-product"))
     ))
 
     transaction {
         request.user.updateConfiguration { User.Configurations() }
     }
+
+    request.writeButton("Можно вернуться наа это страницу нажав кнопку снизу", listOf("Домой"))
 
     return false;
 }

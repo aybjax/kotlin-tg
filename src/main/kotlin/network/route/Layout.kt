@@ -28,7 +28,7 @@ class Layout {
          * returned mostly after response
          */
         fun layoutFooter(request: CallbackRequest) {
-            request.writeLink("Вернуться домой", listOf(Anchor(text = "Домой", link = "greet-user")))
+//            request.writeButton("Вернуться домой", listOf("Домой"))
         }
     }
 }
