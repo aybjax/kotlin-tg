@@ -100,8 +100,8 @@ class TextRequest(
         /**
          * Create TextRequest from text and User ID
          */
-        fun fromTextUser(text: String, userId: Long, bot: Bot, chatId: ChatId): TextRequest {
-            val user = User.getUser(userId)
+        fun fromTextUser(text: String, userDto: User.About, bot: Bot, chatId: ChatId): TextRequest {
+            val user = User.getUser(userDto)
 
             return TextRequest(user, text, bot, chatId)
         }

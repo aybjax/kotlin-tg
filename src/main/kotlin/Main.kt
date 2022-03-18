@@ -5,10 +5,12 @@ import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.logging.LogLevel
 import constants.MECHANICUM_TELEGRAM_TOKEN
 import db.initDatabase
+import db.models.User
 import network.req_resp.CallbackRequest
 import network.req_resp.TextRequest
-import network.route.layoutHeader
+import network.route.Layout
 import network.route.routeCallback
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.intToDecimal
 
 fun main() {
     initDatabase(true)
@@ -20,21 +22,27 @@ fun main() {
 
         dispatch {
             text {
-                val chatId = message?.chat?.id ?: return@text
+//                val chatId = message?.chat?.id ?: return@text
+                val chat = message?.chat ?: return@text
 
-                val request = TextRequest.fromTextUser(text, chatId, bot, ChatId.fromId(chatId)).toCallbackRequest()
+                val userDto = User.About.fromChat(chat)
+
+                val request = TextRequest.fromTextUser(text, userDto, bot, ChatId.fromId(chat.id)).toCallbackRequest()
 
                 routeCallback(request)
             }
 
             callbackQuery() {
-                val chatId = callbackQuery.message?.chat?.id ?: return@callbackQuery
+//                val chatId = callbackQuery.message?.chat?.id ?: return@callbackQuery
+                val chat = callbackQuery.message?.chat ?: return@callbackQuery
+
+                val userDto = User.About.fromChat(chat)
 
                 val request = CallbackRequest.fromCallbackUser(
-                    callbackQuery.data, chatId, bot, ChatId.fromId(chatId)
+                    callbackQuery.data, userDto, bot, ChatId.fromId(chat.id)
                 )
 
-                layoutHeader(request)
+                Layout.layoutHeader(request)
                 routeCallback(request)
             }
         }

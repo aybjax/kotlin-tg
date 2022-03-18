@@ -71,8 +71,8 @@ data class CallbackRequest(
         /**
          * Create CallbackRequest with userId
          */
-        fun fromCallbackUser(callbackQuery: String, userId: Long, bot: Bot, chatId: ChatId): CallbackRequest {
-            val user = User.getUser(userId)
+        fun fromCallbackUser(callbackQuery: String, userDto: User.About, bot: Bot, chatId: ChatId): CallbackRequest {
+            val user = User.getUser(userDto)
 
             return fromCallback(callbackQuery, user, bot, chatId);
         }

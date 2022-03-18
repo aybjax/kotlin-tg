@@ -23,7 +23,7 @@ fun routeCallback(request: CallbackRequest) {
         }
 
         "account-page" -> {
-            request.writeText("Аккаунт")
+            redirectNotImplemented(request)
 
             true
         }
@@ -71,7 +71,7 @@ fun routeCallback(request: CallbackRequest) {
         "forward-mechanicum-courses",
         "backwards-mechanicum-courses" -> {
             //FIXME not sent
-            request.writeText("_Введите кол-во страниц для перелистывания_:")
+            request.writeText("_Cтраниц для перелистывания:_")
 
             true
         }
@@ -125,7 +125,7 @@ fun routeCallback(request: CallbackRequest) {
             request.getQueryOrNull<String>("action")?.let { action ->
                 if(action == "done") {
                     request.user.updateConfiguration {
-                        it.correct_processes?.plusOne()
+                        it.correct_processes = it.correct_processes?.plusOne()
 
                         it
                     }
@@ -133,20 +133,16 @@ fun routeCallback(request: CallbackRequest) {
             }
 
             if(nextOrder > processCount) {
-                val course = transaction {
+                transaction {
                     CourseDao.findById(courseId)
                 } ?: return
-
-                //FIXME not sent
-                request.writeText("Вы закончили курс *${course.name}*")
 
                 val configurations = request.user.configurations
                 val correct = configurations?.correct_processes ?: 0
                 val total = configurations?.total_processes ?: -1
 
-                request.writeText("Результат: $correct из $total (${
-                    (correct.toDouble()/total.toDouble() * 100).roundDecimal()
-                }%")
+                request.writeText("*Курс пройден*: $correct из $total правильных")
+                request.writeText("${(correct.toDouble()/total.toDouble() * 100).roundDecimal()}")
 
                 request.user.updateConfiguration {
                     it.course_id = null
@@ -156,22 +152,21 @@ fun routeCallback(request: CallbackRequest) {
 
                     it
                 }
-
-                return
             }
-
-            val msg = """
+            else {
+                val msg = """
                         $nextOrder.
                         *${process?.description?.trim()}*
                         ${process?.detailing?.trim()}
                     """.trimIndent()
 
-            val buttons = listOf(
-                Anchor("Сделано", "start-mechanicum-course?action=done"),
-                Anchor("Пропустить", "start-mechanicum-course")
-            )
+                val buttons = listOf(
+                    Anchor("Сделано", "start-mechanicum-course?action=done"),
+                    Anchor("Пропустить", "start-mechanicum-course")
+                )
 
-            request.writeLink(msg, buttons)
+                request.writeLink(msg, buttons)
+            }
 
             true
         }
@@ -191,7 +186,7 @@ fun routeCallback(request: CallbackRequest) {
         else -> false
     }
 
-    if(writeFooter) layoutFooter(request)
+    if(writeFooter) Layout.layoutFooter(request)
 
     if(! request.route.isNullOrBlank()) {
         request.user.updateConfiguration {
