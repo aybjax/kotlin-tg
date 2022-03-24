@@ -1,15 +1,15 @@
 package db
 
 import db.models.Users
+import db.models.mechanicum.constants.*
 import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import mechanicum.constants.*
-import mechanicum.db.models.CourseDao
-import mechanicum.db.models.ProcessDao
-import mechanicum.db.transactions.initMechanicumTables
-import mechanicum.dto.AwsCourseDto
-import mechanicum.dto.AwsCoursesDto
+import db.models.mechanicum.db.models.CourseDao
+import db.models.mechanicum.db.models.ProcessDao
+import db.models.mechanicum.db.transactions.initMechanicumTables
+import db.models.mechanicum.dto.AwsCourseDto
+import db.models.mechanicum.dto.AwsCoursesDto
 import network.aws.S3BucketReader
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils

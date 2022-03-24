@@ -1,6 +1,6 @@
 package network.route
 
-import mechanicum.home
+import db.models.mechanicum.home
 import network.req_resp.CallbackRequest
 
 /**

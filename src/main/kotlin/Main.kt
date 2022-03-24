@@ -7,6 +7,7 @@ import constants.MECHANICUM_TELEGRAM_TOKEN
 import db.initDatabase
 import db.models.User
 import examples.telegramsamples.runDispatcherExample
+import extensions.normalizedString
 import network.req_resp.CallbackRequest
 import network.req_resp.TextRequest
 import network.route.Layout
@@ -27,18 +28,21 @@ fun main() {
 
                 val userDto = User.About.fromChat(chat)
 
-                val request = TextRequest.fromTextUser(text, userDto, bot, ChatId.fromId(chat.id)).toCallbackRequest()
+                val request = TextRequest.fromTextUser(
+                    text, userDto, bot, ChatId.fromId(chat.id), message.messageId
+                ).toCallbackRequest()
 
                 routeCallback(request)
             }
 
             callbackQuery() {
                 val chat = callbackQuery.message?.chat ?: return@callbackQuery
+                val messageId = callbackQuery.message?.messageId ?: return@callbackQuery
 
                 val userDto = User.About.fromChat(chat)
 
                 val request = CallbackRequest.fromCallbackUser(
-                    callbackQuery.data, userDto, bot, ChatId.fromId(chat.id)
+                    callbackQuery.data, userDto, bot, ChatId.fromId(chat.id), messageId,
                 )
 
                 Layout.layoutHeader(request)

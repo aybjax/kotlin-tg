@@ -21,7 +21,7 @@ class Layout {
          * returned mostly before response
          */
         fun layoutHeader(request: CallbackRequest) {
-            if(request.needPadding) request.writeText(text, false)
+//            if(request.needPadding) request.writeText(text, false)
         }
 
         /**

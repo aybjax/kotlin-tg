@@ -17,45 +17,50 @@ sealed class Request(
     open val user: User,
     open val bot: Bot,
     open val chatId: ChatId,
+    open val messageId: Long,
 ) {
     /**
      * Send user markdown? text message
      */
-    fun writeText(text: String, isMarkdown: Boolean = true) {
-        if (isMarkdown) {
-            bot.sendMessage(text = text, chatId = chatId, parseMode = ParseMode.MARKDOWN_V2)
+    fun writeText(text: String, edit: Boolean = false) {
+        if(edit) {
+            bot.editMessageText(text = text, chatId = chatId,
+                parseMode = ParseMode.MARKDOWN_V2,
+                messageId = messageId)
 
             return
         }
 
-        bot.sendMessage(text = text, chatId = chatId)
+        bot.sendMessage(text = text, chatId = chatId,
+            parseMode = ParseMode.MARKDOWN_V2)
     }
 
     /**
      * Send user markdown? text with buttons
      */
-    fun writeLink(text: String, anchors: List<Anchor>, isParsed: Boolean = true) {
+    fun writeLink(text: String, anchors: List<Anchor>, edit: Boolean = false) {
         val btnMarkup = anchors.map {
             InlineKeyboardButton.CallbackData(text = it.text, callbackData = it.link)
         }
 
         val inlineKeyboardMarkup = InlineKeyboardMarkup.create(btnMarkup)
 
-        if(isParsed) {
-            bot.sendMessage(
+        if(edit) {
+            bot.editMessageText(
                 chatId = chatId,
                 text = text,
                 parseMode = ParseMode.MARKDOWN,
                 replyMarkup = inlineKeyboardMarkup,
+                messageId = messageId,
             )
 
             return
         }
 
-
         bot.sendMessage(
             chatId = chatId,
             text = text,
+            parseMode = ParseMode.MARKDOWN,
             replyMarkup = inlineKeyboardMarkup,
         )
     }
@@ -64,7 +69,7 @@ sealed class Request(
      * Send user markdown? text with buttons
      */
     @JvmName("writeLink1")
-    fun writeLink(text: String, anchors: List<List<Anchor>>, isParsed: Boolean = true) {
+    fun writeLink(text: String, anchors: List<List<Anchor>>, edit: Boolean = false) {
         val btnMarkup = anchors.map { list ->
             list.map {
                 InlineKeyboardButton.CallbackData(text = it.text, callbackData = it.link)
@@ -73,21 +78,22 @@ sealed class Request(
 
         val inlineKeyboardMarkup = InlineKeyboardMarkup.create(btnMarkup)
 
-        if(isParsed) {
-            bot.sendMessage(
+        if(edit) {
+            bot.editMessageText(
                 chatId = chatId,
                 text = text,
                 parseMode = ParseMode.MARKDOWN,
                 replyMarkup = inlineKeyboardMarkup,
+                messageId = messageId,
             )
 
             return
         }
 
-
         bot.sendMessage(
             chatId = chatId,
             text = text,
+            parseMode = ParseMode.MARKDOWN,
             replyMarkup = inlineKeyboardMarkup,
         )
     }
@@ -95,19 +101,20 @@ sealed class Request(
     /**
      * Send user markdown? text with buttons
      */
-    fun writeButton(text: String, buttonTexts: List<String>, isParsed: Boolean = true) {
+    fun writeButton(text: String, buttonTexts: List<String>, edit: Boolean = false) {
         val btnMarkup = buttonTexts.map {
             KeyboardButton(text = it)
         }.toTypedArray()
 
         val keyboardMarkup = KeyboardReplyMarkup(*btnMarkup, resizeKeyboard = true)
 
-        if(isParsed) {
-            bot.sendMessage(
+        if(edit) {
+            bot.editMessageText(
                 chatId = chatId,
                 text = text,
                 parseMode = ParseMode.MARKDOWN,
-                replyMarkup = keyboardMarkup
+                replyMarkup = keyboardMarkup,
+                messageId = messageId,
             )
 
             return
@@ -116,12 +123,13 @@ sealed class Request(
         bot.sendMessage(
             chatId = chatId,
             text = text,
-            replyMarkup = keyboardMarkup
+            parseMode = ParseMode.MARKDOWN,
+            replyMarkup = keyboardMarkup,
         )
     }
 
     @JvmName("writeButton1")
-    fun writeButton(text: String, buttonTexts: List<List<String>>, isParsed: Boolean = true) {
+    fun writeButton(text: String, buttonTexts: List<List<String>>, edit: Boolean = false) {
         val btnMarkup = buttonTexts.map { list ->
             list.map {
                 KeyboardButton(text = it)
@@ -130,12 +138,13 @@ sealed class Request(
 
         val keyboardMarkup = KeyboardReplyMarkup(btnMarkup, resizeKeyboard = true)
 
-        if(isParsed) {
-            bot.sendMessage(
+        if(edit) {
+            bot.editMessageText(
                 chatId = chatId,
                 text = text,
                 parseMode = ParseMode.MARKDOWN,
-                replyMarkup = keyboardMarkup
+                replyMarkup = keyboardMarkup,
+                messageId = messageId,
             )
 
             return
@@ -144,7 +153,8 @@ sealed class Request(
         bot.sendMessage(
             chatId = chatId,
             text = text,
-            replyMarkup = keyboardMarkup
+            parseMode = ParseMode.MARKDOWN,
+            replyMarkup = keyboardMarkup,
         )
     }
 }

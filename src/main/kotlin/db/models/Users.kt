@@ -129,6 +129,8 @@ class User(id: EntityID<Int>): IntEntity(id)
         var total_processes: Int? = null,
         var correct_processes: Int? = null,
         var searchName: String? = null,
+        var previous_input: String? = null,
+        var previous_input_route: String? = null,
     )
 
     /**

@@ -1,4 +1,4 @@
-package mechanicum.dto.aws_course
+package db.models.mechanicum.dto.aws_course
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass

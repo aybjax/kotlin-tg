@@ -1,8 +1,8 @@
-package mechanicum.dto
+package db.models.mechanicum.dto
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
-import mechanicum.dto.aws_course.ProcessDto
+import db.models.mechanicum.dto.aws_course.ProcessDto
 
 /**
  * AWS DTO for id.json files

@@ -1,4 +1,4 @@
-package mechanicum
+package db.models.mechanicum
 
 import db.models.User
 import network.req_resp.Anchor
@@ -12,15 +12,15 @@ fun home(request: Request): Boolean {
     val text = "Вас приветствует ассистент телеграм бот *VargatesBot*"
 
     request.writeLink(text, listOf(
-        listOf(Anchor(text = "Личный кабинет", link = "account-page")),
-        listOf(Anchor(text = "Выбрать Продукт", link = "choose-product"))
+        listOf(Anchor(text = "\uD83D\uDC64 Личный кабинет", link = "account-page")),
+        listOf(Anchor(text = "▶ Выбрать Продукт", link = "choose-product"))
     ))
 
     transaction {
         request.user.updateConfiguration { User.Configurations() }
     }
 
-    request.writeButton("Можно вернуться наа это страницу нажав кнопку снизу", listOf("Домой"))
+    request.writeButton("Можно вернуться наа это страницу нажав кнопку снизу", listOf("\uD83C\uDFE0 Домой"))
 
     return false;
 }

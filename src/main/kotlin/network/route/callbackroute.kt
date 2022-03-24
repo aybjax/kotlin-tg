@@ -3,15 +3,16 @@ package network.route
 import com.github.kotlintelegrambot.entities.ParseMode
 import extensions.plusOne
 import extensions.roundDecimal
-import mechanicum.db.models.CourseDao
-import mechanicum.db.models.ProcessDao
-import mechanicum.db.models.Processes
-import mechanicum.listCourses
-import mechanicum.home
+import db.models.mechanicum.db.models.CourseDao
+import db.models.mechanicum.db.models.ProcessDao
+import db.models.mechanicum.db.models.Processes
+import db.models.mechanicum.listCourses
+import db.models.mechanicum.home
 import network.req_resp.Anchor
 import network.req_resp.CallbackRequest
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
+import kotlin.properties.Delegates
 
 /**
  * Route function
@@ -31,19 +32,16 @@ fun routeCallback(request: CallbackRequest) {
         "choose-product" -> {
             request.writeLink("*Выберите продукт*:", listOf(
                 listOf(
-                    Anchor(text = "Mechanicum", link = "mechanicum-courses")
+                    Anchor(text = "\uD83D\uDE9C Mechanicum", link = "mechanicum-courses")
                 ),
                 listOf(
-                    Anchor(text = "Mechanicum", link = "mechanicum-courses")
+                    Anchor(text = "\uD83D\uDE91 Academix", link = "academix-courses")
                 ),
                 listOf(
-                    Anchor(text = "Academix", link = "academix-courses")
+                    Anchor(text = "\uD83E\uDE7A Dimedus", link = "dimedus-courses")
                 ),
                 listOf(
-                    Anchor(text = "Dimedus", link = "dimedus-courses")
-                ),
-                listOf(
-                    Anchor(text = "Roqed", link = "roqed-courses")
+                    Anchor(text = "\uD83D\uDCDA Roqed", link = "roqed-courses")
                 )
             ))
 
@@ -72,10 +70,105 @@ fun routeCallback(request: CallbackRequest) {
             redirectNotImplemented(request)
         }
 
-        "forward-mechanicum-courses",
+        "forward-mechanicum-courses" -> {
+            val anchors: List<List<Anchor>> = listOf(
+                listOf(
+                    Anchor("1", "forward-mechanicum-input?digit=1"),
+                    Anchor("2", "forward-mechanicum-input?digit=2"),
+                    Anchor("3", "forward-mechanicum-input?digit=3"),
+                ),
+                listOf(
+                    Anchor("4", "forward-mechanicum-input?digit=4"),
+                    Anchor("5", "forward-mechanicum-input?digit=5"),
+                    Anchor("6", "forward-mechanicum-input?digit=6"),
+                ),
+                listOf(
+                    Anchor("7", "forward-mechanicum-input?digit=7"),
+                    Anchor("8", "forward-mechanicum-input?digit=8"),
+                    Anchor("9", "forward-mechanicum-input?digit=9"),
+                ),
+                listOf(
+                    Anchor("0", "forward-mechanicum-input?digit=0"),
+                    Anchor("\uD83C\uDD97", "forward-mechanicum-input"),
+                ),
+            )
+            request.writeLink("_Cтраниц для перелистывания:_", anchors)
+
+            true
+        }
+
+        "forward-mechanicum-input" -> {
+            val anchors: List<List<Anchor>> = listOf(
+                listOf(
+                    Anchor("1", "forward-mechanicum-input?digit=1"),
+                    Anchor("2", "forward-mechanicum-input?digit=2"),
+                    Anchor("3", "forward-mechanicum-input?digit=3"),
+                ),
+                listOf(
+                    Anchor("4", "forward-mechanicum-input?digit=4"),
+                    Anchor("5", "forward-mechanicum-input?digit=5"),
+                    Anchor("6", "forward-mechanicum-input?digit=6"),
+                ),
+                listOf(
+                    Anchor("7", "forward-mechanicum-input?digit=7"),
+                    Anchor("8", "forward-mechanicum-input?digit=8"),
+                    Anchor("9", "forward-mechanicum-input?digit=9"),
+                ),
+                listOf(
+                    Anchor("0", "forward-mechanicum-input?digit=0"),
+                    Anchor("\uD83C\uDD97", "forward-mechanicum-input"),
+                ),
+            )
+
+            val digit = request.queries.get("digit")
+            var currentDigit by Delegates.notNull<String>()
+
+            digit?.let {
+                request.user.updateConfiguration { configurations ->
+                    val prev_digit = configurations.previous_input
+                    val isCurrent = configurations.previous_input_route == "forward-mechanicum-input"
+
+                    if(prev_digit.isNullOrBlank() && isCurrent) {
+                        currentDigit = prev_digit + digit
+                    }
+                    else {
+                        currentDigit = digit
+                    }
+
+                    configurations
+                }
+
+                request.writeLink("_Cтраниц для перелистывания:_ $currentDigit", anchors, true)
+            }
+
+            request.writeLink("_Cтраниц для перелистывания:_ no", anchors, true)
+
+            true
+        }
+
         "backwards-mechanicum-courses" -> {
-            //FIXME not sent
-            request.writeText("_Cтраниц для перелистывания:_")
+            val anchors: List<List<Anchor>> = listOf(
+                listOf(
+                    Anchor("1", "backwards-mechanicum-input?digit=1"),
+                    Anchor("2", "backwards-mechanicum-input?digit=2"),
+                    Anchor("3", "backwards-mechanicum-input?digit=3"),
+                ),
+                listOf(
+                    Anchor("4", "backwards-mechanicum-input?digit=4"),
+                    Anchor("5", "backwards-mechanicum-input?digit=5"),
+                    Anchor("6", "backwards-mechanicum-input?digit=6"),
+                ),
+                listOf(
+                    Anchor("7", "backwards-mechanicum-input?digit=7"),
+                    Anchor("8", "backwards-mechanicum-input?digit=8"),
+                    Anchor("9", "backwards-mechanicum-input?digit=9"),
+                ),
+                listOf(
+                    Anchor("0", "backwards-mechanicum-input?digit=0"),
+                    Anchor("\uD83C\uDD97", "backwards-mechanicum-input"),
+                ),
+            )
+            request.writeLink("_Cтраниц для перелистывания:_", anchors)
 
             true
         }

@@ -1,6 +1,6 @@
-package mechanicum
+package db.models.mechanicum
 
-import mechanicum.db.models.CourseDao
+import db.models.mechanicum.db.models.CourseDao
 import network.req_resp.Anchor
 import network.req_resp.CallbackRequest
 import network.req_resp.RequestPage
@@ -26,15 +26,15 @@ fun listCourses(request: CallbackRequest): Boolean {
     val anchors = mutableListOf<Anchor>()
     if(page.isNotFirstPage()) {
         anchors.add(
-            Anchor(text = "<<", link = "mechanicum-courses?page=${page.prev}")
+            Anchor(text = "⬅", link = "mechanicum-courses?page=${page.prev}")
         )
     }
     anchors.add(
-        Anchor(text = "Выбрать курс", link = "choose-mechanicum-course-id")
+        Anchor(text = "Выбрать курс \uD83C\uDD97", link = "choose-mechanicum-course-id")
     )
     if(page notLastPageFor pageCount) {
         anchors.add(
-            Anchor(text = ">>", link = "mechanicum-courses?page=${page.next}")
+            Anchor(text = "➡", link = "mechanicum-courses?page=${page.next}")
         )
     }
 
@@ -52,15 +52,15 @@ fun listCourses(request: CallbackRequest): Boolean {
 
     val jumpButtons = mutableListOf<Anchor>()
 
-    if(page notLastPageFor pageCount) {
+    if(page.isNotFirstPage()) {
         jumpButtons.add(
-            Anchor(text = "вперед", link = "forward-mechanicum-courses")
+            Anchor(text = "⏪⏪", link = "backwards-mechanicum-courses")
         )
     }
 
-    if(page.isNotFirstPage()) {
+    if(page notLastPageFor pageCount) {
         jumpButtons.add(
-            Anchor(text = "назад", link = "backwards-mechanicum-courses")
+            Anchor(text = "⏩⏩", link = "forward-mechanicum-courses")
         )
     }
 
@@ -71,10 +71,10 @@ fun listCourses(request: CallbackRequest): Boolean {
         request.writeLink("*Ничего не найдено*", jumpButtons)
     }
 
-    val buttons = mutableListOf<Anchor>(Anchor(text = "Ввести название", link = "mechanicum-search-name"))
+    val buttons = mutableListOf<Anchor>(Anchor(text = "\uD83D\uDD0D Поиск по названию", link = "mechanicum-search-name"))
 
     if(! request.user.configurations?.searchName.isNullOrEmpty()) {
-        buttons.add(Anchor(text = "Отменить поиск", link = "mechanicum-search-name-cancel"))
+        buttons.add(Anchor(text = "❌ Отменить поиск", link = "mechanicum-search-name-cancel"))
     }
 
 //    request.writeLink("Поиск по названию:", buttons)

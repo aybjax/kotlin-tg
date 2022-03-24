@@ -18,8 +18,9 @@ data class CallbackRequest(
     var queries: Map<String, String>,
     override val bot: Bot,
     override val chatId: ChatId,
+    override val messageId: Long,
     var needPadding: Boolean = true,
-): Request(user, bot, chatId){
+): Request(user, bot, chatId, messageId){
     /**
      * Get query ?a=b as specific nullable type
      */
@@ -71,16 +72,16 @@ data class CallbackRequest(
         /**
          * Create CallbackRequest with userId
          */
-        fun fromCallbackUser(callbackQuery: String, userDto: User.About, bot: Bot, chatId: ChatId): CallbackRequest {
+        fun fromCallbackUser(callbackQuery: String, userDto: User.About, bot: Bot, chatId: ChatId, messageId: Long): CallbackRequest {
             val user = User.getUser(userDto)
 
-            return fromCallback(callbackQuery, user, bot, chatId);
+            return fromCallback(callbackQuery, user, bot, chatId, messageId);
         }
 
         /**
          * Create CallbackRequest with User object
          */
-        fun fromCallback(callbackQuery: String, user: User, bot: Bot, chatId: ChatId): CallbackRequest {
+        fun fromCallback(callbackQuery: String, user: User, bot: Bot, chatId: ChatId, messageId: Long): CallbackRequest {
             val (route, query) = parseRoute(callbackQuery)
             var needPadding = true;
 
@@ -100,6 +101,7 @@ data class CallbackRequest(
                 query,
                 bot,
                 chatId,
+                messageId,
                 needPadding,
             )
         }

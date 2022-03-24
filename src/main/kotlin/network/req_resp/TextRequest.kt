@@ -5,7 +5,7 @@ import com.github.kotlintelegrambot.entities.ChatId
 import db.models.User
 import extensions.getFirstWord
 import extensions.normalizedString
-import mechanicum.db.models.CourseDao
+import db.models.mechanicum.db.models.CourseDao
 
 /**
  * Request object for text and commands
@@ -16,7 +16,8 @@ class TextRequest(
     text: String,
     override val bot: Bot,
     override val chatId: ChatId,
-): Request(user, bot, chatId)
+    override val messageId: Long,
+): Request(user, bot, chatId, messageId)
 {
     val text = text.normalizedString()
     private val greetingWords = listOf("start", "начать");
@@ -32,6 +33,7 @@ class TextRequest(
             user,
             bot,
             chatId,
+            messageId,
         )
     }
 
@@ -100,10 +102,10 @@ class TextRequest(
         /**
          * Create TextRequest from text and User ID
          */
-        fun fromTextUser(text: String, userDto: User.About, bot: Bot, chatId: ChatId): TextRequest {
+        fun fromTextUser(text: String, userDto: User.About, bot: Bot, chatId: ChatId, messageId: Long): TextRequest {
             val user = User.getUser(userDto)
 
-            return TextRequest(user, text, bot, chatId)
+            return TextRequest(user, text, bot, chatId, messageId)
         }
     }
 }
