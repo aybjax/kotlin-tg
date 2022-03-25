@@ -80,6 +80,12 @@ class TextRequest(
             if (! ids.contains(id)) {
                 writeButton("Номер курса должны быть *${ids.joinToString(", ")}*")
 
+
+                val buttons = user.configurations?.course_ids?.map { listOf(it.toString()) } ?: emptyList()
+                val finalButtons = buttons + listOf(listOf("\uD83C\uDFE0 Домой"))
+
+                writeButtons("_Введите номер курса_:", finalButtons)
+
                 return ""
             }
 

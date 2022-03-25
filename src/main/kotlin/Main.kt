@@ -3,22 +3,27 @@ import com.github.kotlintelegrambot.dispatch
 import com.github.kotlintelegrambot.dispatcher.*
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.logging.LogLevel
-import constants.MECHANICUM_TELEGRAM_TOKEN
+import constants.EnvVars
 import db.initDatabase
+import db.migrateDatabase
 import db.models.User
-import examples.telegramsamples.runDispatcherExample
-import extensions.normalizedString
+import db.seedDatabase
+import kotlinx.coroutines.runBlocking
 import network.req_resp.CallbackRequest
 import network.req_resp.TextRequest
 import network.route.Layout
 import network.route.routeCallback
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.intToDecimal
 
-fun main() {
-    initDatabase(true)
+fun main(args: Array<String>) = runBlocking {
+    initDatabase()
+
+    if(args.isNotEmpty()) {
+        migrateDatabase()
+        seedDatabase()
+    }
 
     bot {
-        token = MECHANICUM_TELEGRAM_TOKEN
+        token = EnvVars.MECHANICUM_TELEGRAM_TOKEN
         timeout = 30
         logLevel = LogLevel.Network.Body
 

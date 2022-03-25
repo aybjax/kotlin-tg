@@ -1,8 +1,8 @@
 package db
 
+import constants.EnvVars
 import db.models.Users
 import db.models.mechanicum.constants.*
-import io.github.cdimascio.dotenv.dotenv
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import db.models.mechanicum.db.models.CourseDao
@@ -15,24 +15,15 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 
-/**
- * Connects to database and
- *    Drops and migrates and pull data from AWS
- * if omitMigration, then does not alter table
- */
-fun initDatabase(omitMigration: Boolean = false) {
-    Database.connect("jdbc:mysql://localhost:3306/kotlintg?&serverTimezone=UTC", driver = "com.mysql.cj.jdbc.Driver",
-        user = "root", password = dotenv()["ps"],
-    )
-
-    if(omitMigration) return;
-
+fun migrateDatabase() {
     transaction {
         SchemaUtils.drop(Users)
         SchemaUtils.create(Users)
         initMechanicumTables()
     }
+}
 
+fun seedDatabase() {
     runBlocking {
         val bucket = S3BucketReader(MECHANICUM_REGION, MECHANICUM_BUCKET)
 
@@ -69,4 +60,16 @@ fun initDatabase(omitMigration: Boolean = false) {
             }
         }
     }
+}
+
+/**
+ * Connects to database and
+ *    Drops and migrates and pull data from AWS
+ * if omitMigration, then does not alter table
+ */
+fun initDatabase(omitMigration: Boolean = false) {
+    Database.connect("jdbc:mysql://localhost:3306/${EnvVars.TELEGRAM_DATABASE}?&serverTimezone=UTC",
+        driver = "com.mysql.cj.jdbc.Driver",
+        user = EnvVars.TELEGRAM_USER, password = EnvVars.TELEGRAM_PASSWORD,
+    )
 }

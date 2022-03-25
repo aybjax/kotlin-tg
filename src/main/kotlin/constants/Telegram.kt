@@ -1,7 +1,0 @@
-package constants
-
-/**
- * Telegram bot token
- */
-const val MECHANICUM_TELEGRAM_TOKEN = "5236277535:AAGGYiBH3AKyAAAWgLCPwk_38OZZuQx1e20"
-//const val MECHANICUM_TELEGRAM_TOKEN = "5127502789:AAGcpHYI-2HesaZq8y6cCLVRRsC0S1svgH8"
