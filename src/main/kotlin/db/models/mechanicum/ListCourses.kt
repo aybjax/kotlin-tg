@@ -19,7 +19,7 @@ fun listCourses(request: CallbackRequest): Boolean {
     val coursesText = courses.joinToString("\n") {
         val description = it.description
 
-        "${it.id}. *${it.name}* ${ if(description.isNotEmpty())
+        "/${it.id}. *${it.name}* ${ if(description.isNotEmpty())
             "(`" else " "}$description${ if(description.isNotEmpty()) "`)" else ""}\n\n"
     }
 
@@ -45,7 +45,7 @@ fun listCourses(request: CallbackRequest): Boolean {
                 Для перелистывания на несколько страниц вперед ил назад нажмите соответствующие кнопки.
                 Список курсов:
             """.trimIndent()
-        request.writeText(text)
+        request.writeButton(text)
     }
 
 //    request.writeLink(coursesText, anchors)

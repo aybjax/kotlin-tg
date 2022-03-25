@@ -10,6 +10,7 @@ import db.models.mechanicum.listCourses
 import db.models.mechanicum.home
 import network.req_resp.Anchor
 import network.req_resp.CallbackRequest
+import network.req_resp.TextRequest
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
 import kotlin.properties.Delegates
@@ -53,7 +54,7 @@ fun routeCallback(request: CallbackRequest) {
         }
 
         "mechanicum-search-name" -> {
-            request.writeText("_Поиск по названию курса в Mechanicum:_")
+            request.writeButton("_Поиск по названию курса в Mechanicum:_")
 
             true
         }
@@ -90,6 +91,7 @@ fun routeCallback(request: CallbackRequest) {
                 listOf(
                     Anchor("0", "forward-mechanicum-input?digit=0"),
                     Anchor("\uD83C\uDD97", "forward-mechanicum-input"),
+                    Anchor("⬅️", "forward-mechanicum-input?digit=10"),
                 ),
             )
             request.writeLink("_Cтраниц для перелистывания:_", anchors)
@@ -117,33 +119,55 @@ fun routeCallback(request: CallbackRequest) {
                 listOf(
                     Anchor("0", "forward-mechanicum-input?digit=0"),
                     Anchor("\uD83C\uDD97", "forward-mechanicum-input"),
+                    Anchor("⬅️", "forward-mechanicum-input?digit=10"),
                 ),
             )
 
             val digit = request.queries.get("digit")
-            var currentDigit by Delegates.notNull<String>()
+            var currentDigit: String = ""
 
             digit?.let {
                 request.user.updateConfiguration { configurations ->
-                    val prev_digit = configurations.previous_input
+                    val prev_digit = configurations.previous_input ?: ""
                     val isCurrent = configurations.previous_input_route == "forward-mechanicum-input"
 
-                    if(prev_digit.isNullOrBlank() && isCurrent) {
+                    if(digit == "10" && isCurrent) {
+                        currentDigit = prev_digit.dropLast(1)
+                    }
+                    else if(prev_digit.isNotEmpty() && isCurrent) {
                         currentDigit = prev_digit + digit
                     }
                     else {
                         currentDigit = digit
                     }
 
+                    configurations.previous_input = currentDigit
+                    configurations.previous_input_route = request.route
+
                     configurations
                 }
 
                 request.writeLink("_Cтраниц для перелистывания:_ $currentDigit", anchors, true)
+
+                true
+            } ?:
+            run {
+                val prev_digit = request.user.configurations?.previous_input
+
+                prev_digit?.let {
+                    val newRequest = TextRequest(
+                        user = request.user,
+                        text = it,
+                        bot = request.bot,
+                        chatId = request.chatId,
+                        messageId = request.messageId,
+                    )
+
+                    routeCallback(newRequest.toCallbackRequest())
+                }
+
+                false
             }
-
-            request.writeLink("_Cтраниц для перелистывания:_ no", anchors, true)
-
-            true
         }
 
         "backwards-mechanicum-courses" -> {
@@ -166,6 +190,7 @@ fun routeCallback(request: CallbackRequest) {
                 listOf(
                     Anchor("0", "backwards-mechanicum-input?digit=0"),
                     Anchor("\uD83C\uDD97", "backwards-mechanicum-input"),
+                    Anchor("⬅️", "backwards-mechanicum-input?digit=10"),
                 ),
             )
             request.writeLink("_Cтраниц для перелистывания:_", anchors)
@@ -173,8 +198,82 @@ fun routeCallback(request: CallbackRequest) {
             true
         }
 
+        "backwards-mechanicum-input" -> {
+            val anchors: List<List<Anchor>> = listOf(
+                listOf(
+                    Anchor("1", "backwards-mechanicum-input?digit=1"),
+                    Anchor("2", "backwards-mechanicum-input?digit=2"),
+                    Anchor("3", "backwards-mechanicum-input?digit=3"),
+                ),
+                listOf(
+                    Anchor("4", "backwards-mechanicum-input?digit=4"),
+                    Anchor("5", "backwards-mechanicum-input?digit=5"),
+                    Anchor("6", "backwards-mechanicum-input?digit=6"),
+                ),
+                listOf(
+                    Anchor("7", "backwards-mechanicum-input?digit=7"),
+                    Anchor("8", "backwards-mechanicum-input?digit=8"),
+                    Anchor("9", "backwards-mechanicum-input?digit=9"),
+                ),
+                listOf(
+                    Anchor("0", "backwards-mechanicum-input?digit=0"),
+                    Anchor("\uD83C\uDD97", "backwards-mechanicum-input"),
+                    Anchor("⬅️", "backwards-mechanicum-input?digit=10"),
+                ),
+            )
+
+            val digit = request.queries.get("digit")
+            var currentDigit: String = ""
+
+            digit?.let {
+                request.user.updateConfiguration { configurations ->
+                    val prev_digit = configurations.previous_input ?: ""
+                    val isCurrent = configurations.previous_input_route == "backwards-mechanicum-input"
+
+                    if(digit == "10" && isCurrent) {
+                        currentDigit = prev_digit.dropLast(1)
+                    }
+                    else if(prev_digit.isNotEmpty() && isCurrent) {
+                        currentDigit = prev_digit + digit
+                    }
+                    else {
+                        currentDigit = digit
+                    }
+
+                    configurations.previous_input = currentDigit
+                    configurations.previous_input_route = request.route
+
+                    configurations
+                }
+
+                request.writeLink("_Cтраниц для перелистывания:_ $currentDigit", anchors, true)
+
+                true
+            } ?:
+            run {
+                val prev_digit = request.user.configurations?.previous_input
+
+                prev_digit?.let {
+                    val newRequest = TextRequest(
+                        user = request.user,
+                        text = it,
+                        bot = request.bot,
+                        chatId = request.chatId,
+                        messageId = request.messageId,
+                    )
+
+                    routeCallback(newRequest.toCallbackRequest())
+                }
+
+                false
+            }
+        }
+
         "choose-mechanicum-course-id" -> {
-            request.writeText("_Введите номер курса_:")
+            val buttons = request.user.configurations?.course_ids?.map { listOf(it.toString()) } ?: emptyList()
+            val finalButtons = buttons + listOf(listOf("\uD83C\uDFE0 Домой"))
+
+            request.writeButtons("_Введите номер курса_:", finalButtons)
 
             true
         }
@@ -183,6 +282,8 @@ fun routeCallback(request: CallbackRequest) {
             val course = transaction {
                 CourseDao.findById(request.getQuery<Int>("course_id"))
             }
+
+            request.writeButton("*Курс выбран:*")
 
             val msg = """
                         _Номер курса:_ *${course?.id}*
@@ -238,8 +339,8 @@ fun routeCallback(request: CallbackRequest) {
                 val correct = configurations?.correct_processes ?: 0
                 val total = configurations?.total_processes ?: -1
 
-                request.writeText("*Курс пройден*: $correct из $total правильных")
-                request.writeText("${(correct.toDouble()/total.toDouble() * 100).roundDecimal()}")
+                request.writeButton("*Курс пройден*: $correct из $total правильных")
+                request.writeButton("${(correct.toDouble()/total.toDouble() * 100).roundDecimal()}")
 
                 request.user.updateConfiguration {
                     it.course_id = null

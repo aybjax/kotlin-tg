@@ -20,7 +20,7 @@ class TextRequest(
 ): Request(user, bot, chatId, messageId)
 {
     val text = text.normalizedString()
-    private val greetingWords = listOf("start", "начать");
+    private val greetingWords = listOf("start", "начать", "домой");
 
     /**
      * Convert to CallbackRequest
@@ -58,24 +58,27 @@ class TextRequest(
             return "mechanicum-courses"
         }
 
-        if(previousQuery == "backwards-mechanicum-courses") {
+        if(previousQuery == "backwards-mechanicum-courses" ||
+                previousQuery == "backwards-mechanicum-input") {
             val page = (user.configurations?.prev_page ?: 1) - text.toLong()
 
             return "mechanicum-courses?page=$page"
         }
 
-        if(previousQuery == "forward-mechanicum-courses") {
+        if(previousQuery == "forward-mechanicum-courses" ||
+                previousQuery == "forward-mechanicum-input") {
             val page = (user.configurations?.prev_page ?: 1) + text.toLong()
 
             return "mechanicum-courses?page=$page"
         }
 
-        if(previousQuery == "choose-mechanicum-course-id") {
+        if(previousQuery == "choose-mechanicum-course-id" ||
+                previousQuery == "mechanicum-courses") {
             val id = text.toInt()
             val ids = user.configurations?.course_ids ?: emptyList()
 
             if (! ids.contains(id)) {
-                writeText("Номер курса должны быть *${ids.joinToString(", ")}*")
+                writeButton("Номер курса должны быть *${ids.joinToString(", ")}*")
 
                 return ""
             }

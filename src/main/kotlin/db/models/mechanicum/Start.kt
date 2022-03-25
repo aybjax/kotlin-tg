@@ -20,7 +20,7 @@ fun home(request: Request): Boolean {
         request.user.updateConfiguration { User.Configurations() }
     }
 
-    request.writeButton("Можно вернуться наа это страницу нажав кнопку снизу", listOf("\uD83C\uDFE0 Домой"))
+    request.writeButton("Можно вернуться на эту страницу нажав кнопку снизу", listOf("\uD83C\uDFE0 Домой"))
 
     return false;
 }

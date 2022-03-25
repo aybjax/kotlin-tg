@@ -18,7 +18,7 @@ fun String.normalizedString(): String {
         it.isNotEmpty()
     }.joinToString(" ") {
         re.replace(it.lowercase(), "")
-    }
+    }.trim()
 }
 
 /**

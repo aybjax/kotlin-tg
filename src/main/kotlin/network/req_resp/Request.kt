@@ -8,7 +8,6 @@ import com.github.kotlintelegrambot.entities.ParseMode
 import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
 import com.github.kotlintelegrambot.entities.keyboard.KeyboardButton
 import db.models.User
-import examples.telegramsamples.generateUsersButton
 
 /**
  * Base class for Requests
@@ -101,7 +100,7 @@ sealed class Request(
     /**
      * Send user markdown? text with buttons
      */
-    fun writeButton(text: String, buttonTexts: List<String>, edit: Boolean = false) {
+    fun writeButton(text: String, buttonTexts: List<String> = listOf("Домой"), edit: Boolean = false) {
         val btnMarkup = buttonTexts.map {
             KeyboardButton(text = it)
         }.toTypedArray()
@@ -128,8 +127,7 @@ sealed class Request(
         )
     }
 
-    @JvmName("writeButton1")
-    fun writeButton(text: String, buttonTexts: List<List<String>>, edit: Boolean = false) {
+    fun writeButtons(text: String, buttonTexts: List<List<String>> = listOf(listOf("Домой")), edit: Boolean = false) {
         val btnMarkup = buttonTexts.map { list ->
             list.map {
                 KeyboardButton(text = it)
