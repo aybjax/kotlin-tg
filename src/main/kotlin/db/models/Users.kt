@@ -9,6 +9,7 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.transactions.transaction
+import routes.enums.Routes
 
 /**
  * Users table represented with Exposed library
@@ -56,8 +57,6 @@ class User(id: EntityID<Int>): IntEntity(id)
                     }
                 }
             }
-
-
 
             return user;
         }

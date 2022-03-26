@@ -1,0 +1,17 @@
+package routes.enums
+
+import com.google.gson.annotations.SerializedName
+import com.squareup.moshi.JsonClass
+
+enum class MechanicumRoutes: Routes {
+    MECHANICUM_COURSES,
+    MECHANICUM_SEARCH_NAME,
+    FORWARD_MECHANICUM_COURSES,
+    FORWARD_MECHANICUM_INPUT,
+    BACKWARDS_MECHANICUM_COURSES,
+    BACKWARDS_MECHANICUM_INPUT,
+    CHOOSE_MECHANICUM_COURSE_ID,
+    CHOSEN_MECHANICUM_COURSE_ID,
+    START_MECHANICUM_COURSE,
+    MECHANICUM_SEARCH_NAME_CANCEL,
+}

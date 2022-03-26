@@ -4,7 +4,7 @@ import com.github.kotlintelegrambot.bot
 import com.github.kotlintelegrambot.dispatch
 import com.github.kotlintelegrambot.dispatcher.text
 import com.github.kotlintelegrambot.entities.ChatId
-import constants.EnvVars
+import containers.EnvVars
 
 fun runEchoExample() {
 

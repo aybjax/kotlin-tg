@@ -14,7 +14,7 @@ import com.github.kotlintelegrambot.entities.keyboard.KeyboardButton
 import com.github.kotlintelegrambot.extensions.filters.Filter
 import com.github.kotlintelegrambot.logging.LogLevel
 import com.github.kotlintelegrambot.network.fold
-import constants.EnvVars
+import containers.EnvVars
 
 fun runDispatcherExample() {
     val bot = bot {
