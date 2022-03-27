@@ -10,7 +10,7 @@ import containers.EnvVars
 
 fun runPollExample() {
     bot {
-        token = EnvVars.MECHANICUM_TELEGRAM_TOKEN
+        token = EnvVars.TELEGRAM_TOKEN
         dispatch {
             pollAnswer {
                 println("${pollAnswer.user.username} has selected the option ${pollAnswer.optionIds.lastOrNull()} in the poll ${pollAnswer.pollId}")

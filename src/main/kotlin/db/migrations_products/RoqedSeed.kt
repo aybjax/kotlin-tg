@@ -36,6 +36,8 @@ object RoqedSeed {
                                 courseEntity.processesCount = processes?.size ?: -1
                             }
 
+                            delay(1000)
+
                             true
                         }
                         catch (e: Exception) {

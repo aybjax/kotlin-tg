@@ -18,7 +18,7 @@ import containers.EnvVars
 
 fun runDispatcherExample() {
     val bot = bot {
-        token = EnvVars.MECHANICUM_TELEGRAM_TOKEN
+        token = EnvVars.TELEGRAM_TOKEN
         timeout = 30
         logLevel = LogLevel.Network.Body
 

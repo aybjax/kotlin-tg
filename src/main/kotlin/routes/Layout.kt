@@ -26,6 +26,6 @@ object Layout {
      * returned mostly after response
      */
     fun layoutFooter(request: CallbackRequest) {
-//            request.writeButton("Вернуться домой", listOf("Домой"))
+//            request.writeButton("Вернуться домой", listOf("🏠 Домой"))
     }
 }

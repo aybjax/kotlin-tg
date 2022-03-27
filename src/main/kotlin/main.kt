@@ -11,21 +11,16 @@ import dataclasses.request.CallbackRequest
 import dataclasses.request.TextRequest
 import routes.CommonRouter
 import routes.Layout
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 fun main(args: Array<String>) = runBlocking {
-    DatabaseObject.initDatabase()
+    EnvVars.checkArgs()
 
-    if(args.isNotEmpty()) {
-        DatabaseObject.migrateDatabase()
-        DatabaseObject.seedDatabase()
+    DatabaseObject.dbConnect()
 
-        println("Completed migration")
-
-        return@runBlocking
-    }
-
-    bot {
-        token = EnvVars.MECHANICUM_TELEGRAM_TOKEN
+    val bot = bot {
+        token = EnvVars.TELEGRAM_TOKEN
         timeout = 30
         logLevel = LogLevel.All()
 
@@ -35,13 +30,9 @@ fun main(args: Array<String>) = runBlocking {
 
                 val userDto = User.About.fromChat(chat)
 
-                val a = TextRequest.fromTextUser(
+                TextRequest.fromTextUser(
                     text, userDto, bot, ChatId.fromId(chat.id), message.messageId
-                )
-
-                val b = a.toCallbackRequest()
-
-                b?.let { request ->
+                ).toCallbackRequest()?.let { request ->
                     CommonRouter.routeCallback(request)
                 }
             }
@@ -60,5 +51,51 @@ fun main(args: Array<String>) = runBlocking {
                 }
             }
         }
-    }.startPolling()
+    }
+
+    if(args.isNotEmpty()) {
+        println("Arguments present: starting migration")
+
+        bot.sendMessage(
+            ChatId.fromId(EnvVars.AYBJAXDIMEDUS),
+            "Starting migrations...",
+        )
+
+        try {
+            DatabaseObject.migrateDatabase()
+            DatabaseObject.seedDatabase()
+        }
+        catch (ex: Exception) {
+            bot.sendMessage(
+                ChatId.fromId(EnvVars.AYBJAXDIMEDUS),
+                "Error on migration",
+            )
+        }
+
+        bot.sendMessage(
+            ChatId.fromId(EnvVars.AYBJAXDIMEDUS),
+            "Ended migration",
+        )
+
+        println("Completed migration")
+
+        return@runBlocking
+    }
+    else {
+        println("Arguments absent")
+    }
+
+    val (userResp, _) = bot.getMe()
+    val botName = userResp?.body()?.result?.username ?: "UNKNOWN"
+
+    val current = LocalDateTime.now()
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+    val formatted = current.format(formatter)
+
+    bot.sendMessage(
+        ChatId.fromId(EnvVars.AYBJAXDIMEDUS),
+        "$botName started at $formatted",
+    )
+
+    bot.startPolling()
 }

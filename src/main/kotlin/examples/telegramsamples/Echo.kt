@@ -10,7 +10,7 @@ fun runEchoExample() {
 
     val bot = bot {
 
-        token = EnvVars.MECHANICUM_TELEGRAM_TOKEN
+        token = EnvVars.TELEGRAM_TOKEN
 
         dispatch {
 

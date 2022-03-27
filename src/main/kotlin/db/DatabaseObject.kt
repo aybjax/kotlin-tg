@@ -2,14 +2,7 @@ package db
 
 import containers.EnvVars
 import db.models.Users
-import containers.products.MechanicumAWS
 import db.migrations_products.MechanicumMigration.initMechanicumTables
-import db.models.CourseMechanicumDao
-import db.models.ProcessMechanicumDao
-import dataclasses.aws.AwsProcessesDto
-import dataclasses.aws.AwsCoursesDto
-import kotlinx.coroutines.delay
-import dataclasses.aws.S3BucketReader
 import db.migrations_products.MechanicumSeed.seedMechanicumTables
 import db.migrations_products.RoqedMigration.initRoqedTables
 import db.migrations_products.RoqedSeed.seedRoqedTables
@@ -37,10 +30,10 @@ object DatabaseObject {
      *    Drops and migrates and pull data from AWS
      * if omitMigration, then does not alter table
      */
-    fun initDatabase(omitMigration: Boolean = false) {
-        Database.connect("jdbc:mysql://localhost:3306/${EnvVars.TELEGRAM_DATABASE}?&serverTimezone=UTC",
+    fun dbConnect(omitMigration: Boolean = false) {
+        Database.connect("jdbc:mysql://localhost:3306/${EnvVars.DATABASE}?&serverTimezone=UTC",
             driver = "com.mysql.cj.jdbc.Driver",
-            user = EnvVars.TELEGRAM_USER, password = EnvVars.TELEGRAM_PASSWORD,
+            user = EnvVars.USER, password = EnvVars.PASSWORD,
         )
     }
 }

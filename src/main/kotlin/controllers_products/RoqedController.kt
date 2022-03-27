@@ -234,16 +234,27 @@ object RoqedController {
         request.writeButton("*Курс выбран:*")
 
         val msg = """
-                            _Номер курса:_ *${course?.id}*
-                            _Название курса:_ *${course?.name}*
-                            _Количество процессов:_ *${course?.processesCount}*
-                        """.trimIndent()
+                    _Название курса:_ *${course?.name}*
+                    _Количество процессов:_ *${course?.processesCount}*
+                """.trimIndent()
 
         val button = listOf(
             Anchor("Начать курс" , RouteQueryPair(RoqedRoutes.START_ROQED_COURSE)),
         )
 
-        request.writeLink(msg, button)
+        val total = course?.processesCount ?: -1
+
+        if(total > 0) {
+            request.writeLink(msg, button)
+        }
+        else {
+            val msg = """
+                    _Название курса:_ *${course?.name}*
+                    *К сожалению, курс пуст*
+                """.trimIndent()
+
+            request.writeButton(msg)
+        }
 
         return true
     }
@@ -288,7 +299,10 @@ object RoqedController {
             val total = configurations?.total_processes ?: -1
 
             request.writeButton("*Курс пройден*: $correct из $total правильных")
-            request.writeButton("${(correct.toDouble()/total.toDouble() * 100).roundDecimal()}")
+
+            if(total > 0) {
+                request.writeButton("${(correct.toDouble()/total.toDouble() * 100).roundDecimal()}")
+            }
 
             request.user.updateConfiguration {
                 it.course_id = null

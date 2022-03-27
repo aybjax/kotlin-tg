@@ -101,7 +101,7 @@ sealed class Request(
     /**
      * Send user markdown? text with buttons
      */
-    fun writeButton(text: String, buttonTexts: List<String> = listOf("Домой"), edit: Boolean = false) {
+    fun writeButton(text: String, buttonTexts: List<String> = listOf("\uD83C\uDFE0 Домой"), edit: Boolean = false) {
         val btnMarkup = buttonTexts.map {
             KeyboardButton(text = it)
         }.toTypedArray()
@@ -128,7 +128,7 @@ sealed class Request(
         )
     }
 
-    fun writeButtons(text: String, buttonTexts: List<List<String>> = listOf(listOf("Домой")), edit: Boolean = false) {
+    fun writeButtons(text: String, buttonTexts: List<List<String>> = listOf(listOf("\uD83C\uDFE0 Домой")), edit: Boolean = false) {
         val btnMarkup = buttonTexts.map { list ->
             list.map {
                 KeyboardButton(text = it)
