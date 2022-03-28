@@ -1,5 +1,7 @@
 package controllers_products
 
+import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
+import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
 import dataclasses.Anchor
 import dataclasses.RequestPage
 import dataclasses.RouteQueryPair
@@ -316,7 +318,7 @@ object RoqedController {
         else {
             val msg = """
                             $nextOrder.
-                            *${process?.description?.trim()}*
+                            *${process?.description?.trim()}*:
                             ${process?.detailing?.trim()}
                         """.trimIndent()
 

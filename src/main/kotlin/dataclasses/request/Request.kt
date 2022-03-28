@@ -25,14 +25,14 @@ sealed class Request(
     fun writeText(text: String, edit: Boolean = false) {
         if(edit) {
             bot.editMessageText(text = text, chatId = chatId,
-                parseMode = ParseMode.MARKDOWN_V2,
+                parseMode = ParseMode.MARKDOWN,
                 messageId = messageId)
 
             return
         }
 
         bot.sendMessage(text = text, chatId = chatId,
-            parseMode = ParseMode.MARKDOWN_V2)
+            parseMode = ParseMode.MARKDOWN)
     }
 
     /**
