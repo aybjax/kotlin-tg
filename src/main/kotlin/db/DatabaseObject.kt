@@ -11,6 +11,14 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object DatabaseObject {
+    fun migrateUser() {
+        transaction {
+            SchemaUtils.drop(Users)
+            SchemaUtils.create(Users)
+        }
+
+    }
+
     fun migrateDatabase() {
         transaction {
             SchemaUtils.drop(Users)

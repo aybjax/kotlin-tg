@@ -20,7 +20,10 @@ object CommonRouter {
                     CommonRoutes.CHOOSE_PRODUCT -> {
                         CommonController.chooseProduct(request)
                     }
-                }
+                    CommonRoutes.LOCATION -> {
+                        CommonController.location(request)
+                    }
+            }
             is AcademixRoutes -> when(request.route as AcademixRoutes) {
                     AcademixRoutes.ACADEMIX_COURSES -> {
                         AcademixController.listCourses(request)
@@ -100,7 +103,7 @@ object CommonRouter {
         }
 
         if(request.route !is EmptyRoutes) {
-            request.user.updateConfiguration {
+            request.user.updateRouting {
                 it.previous_query = request.route.toString()
 
                 it

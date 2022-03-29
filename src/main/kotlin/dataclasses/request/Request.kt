@@ -128,11 +128,26 @@ sealed class Request(
         )
     }
 
-    fun writeButtons(text: String, buttonTexts: List<List<String>> = listOf(listOf("\uD83C\uDFE0 Домой")), edit: Boolean = false) {
-        val btnMarkup = buttonTexts.map { list ->
+    fun writeButtons(text: String,
+                     buttonTexts: List<List<String>> = listOf(listOf("\uD83C\uDFE0 Домой")),
+                     edit: Boolean = false,
+                     locationText: String? = null,
+                     addHome: Boolean = false,
+    ) {
+        var btnMarkup = buttonTexts.map { list ->
             list.map {
                 KeyboardButton(text = it)
             }
+        }
+
+        locationText?.let {
+            btnMarkup = btnMarkup.toMutableList()
+            (btnMarkup as MutableList<List<KeyboardButton>>).add(0, listOf(KeyboardButton(it, requestLocation = true)))
+        }
+
+        if(addHome) {
+            btnMarkup = btnMarkup.toMutableList()
+            (btnMarkup as MutableList<List<KeyboardButton>>).add(listOf(KeyboardButton("\uD83C\uDFE0 Домой")))
         }
 
         val keyboardMarkup = KeyboardReplyMarkup(btnMarkup, resizeKeyboard = true)

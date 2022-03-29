@@ -9,15 +9,15 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.transactions.transaction
-import routes.enums.Routes
 
 /**
  * Users table represented with Exposed library
  */
 object Users: IntIdTable() {
     val userId = long("tg_user_id").uniqueIndex()
-    val jsonConfigurations = text("configurations")
+    val jsonRouting = text("configurations")
     val jsonAbout = text("about")
+    val jsonCompletion = text("completion")
 }
 
 /**
@@ -29,12 +29,16 @@ class User(id: EntityID<Int>): IntEntity(id)
         /**
          * Moshi adapter for configuration object
          */
-        val configurationsAdapter: JsonAdapter<Configurations> = Moshi.Builder().
-                                                                    build().adapter(Configurations::class.java)
+        val routingAdapter: JsonAdapter<Routing> = Moshi.Builder().
+                                                                    build().adapter(Routing::class.java)
         /**
          * Moshi adapter for configuration object
          */
         val aboutAdapter: JsonAdapter<About> = Moshi.Builder().build().adapter(About::class.java)
+        /**
+         * Moshi adapter for configuration object
+         */
+        val completionAdapter: JsonAdapter<Completion> = Moshi.Builder().build().adapter(Completion::class.java)
 
         /**
          * Get User Dao with telegram chat id
@@ -52,7 +56,7 @@ class User(id: EntityID<Int>): IntEntity(id)
                 return@transaction transaction {
                     User.new {
                         this.userId = userDto.user_id
-                        configurations = Configurations()
+                        routing = Routing()
                         about = userDto
                     }
                 }
@@ -71,19 +75,26 @@ class User(id: EntityID<Int>): IntEntity(id)
     }
 
     var userId by Users.userId
-    var jsonConfigurations by Users.jsonConfigurations
+    var jsonRouting by Users.jsonRouting
     var jsonAbout by Users.jsonAbout
+    var jsonCompletion by Users.jsonCompletion
 
-    var configurations: Configurations?
-        get() = configurationsAdapter.fromJson(jsonConfigurations)
+    var routing: Routing?
+        get() = routingAdapter.fromJson(jsonRouting)
         set(value) {
-            jsonConfigurations = configurationsAdapter.toJson(value)
+            jsonRouting = routingAdapter.toJson(value)
         }
 
     var about: About?
         get() = aboutAdapter.fromJson(jsonAbout)
         set(value) {
             jsonAbout = aboutAdapter.toJson(value)
+        }
+
+    var completion: Completion?
+        get() = completionAdapter.fromJson(jsonCompletion)
+        set(value) {
+            jsonCompletion = completionAdapter.toJson(value)
         }
 
     /**
@@ -119,27 +130,47 @@ class User(id: EntityID<Int>): IntEntity(id)
      * Request session/cookie like class
      */
     @JsonClass(generateAdapter = true)
-    data class Configurations(
+    data class Routing(
         var previous_query: String? = null,
         var prev_page: Long? = null,
         var course_ids: List<Int>? = null,
-        var course_id: Int? = null,
-        var next_process_order: Int? = null,
-        var total_processes: Int? = null,
-        var correct_processes: Int? = null,
         var searchName: String? = null,
         var previous_input: String? = null,
         var previous_input_route: String? = null,
     )
 
     /**
+     * Request session/cookie like class
+     */
+    @JsonClass(generateAdapter = true)
+    data class Completion(
+        var course_id: Int? = null,
+        var next_process_order: Int? = null,
+        var total_processes: Int? = null,
+        var correct_processes: Int? = null,
+        var longitude: Float? = null,
+        var latitude: Float? = null,
+    )
+
+    /**
      * Updates current (or if absent new) configuration and returns it
      */
-    fun updateConfiguration(callback: (Configurations) -> Configurations): Configurations? {
+    fun updateRouting(callback: (Routing) -> Routing): Routing? {
         return transaction {
-            configurations = callback(configurations ?: Configurations())
+            routing = callback(routing ?: Routing())
 
-            configurations
+            routing
+        }
+    }
+
+    /**
+     * Updates current (or if absent new) configuration and returns it
+     */
+    fun updateCompletion(callback: (Completion) -> Completion): Completion? {
+        return transaction {
+            completion = callback(completion ?: Completion())
+
+            completion
         }
     }
 }

@@ -11,6 +11,7 @@ import dataclasses.request.CallbackRequest
 import dataclasses.request.TextRequest
 import routes.CommonRouter
 import routes.Layout
+import routes.enums.CommonRoutes
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -50,6 +51,27 @@ fun main(args: Array<String>) = runBlocking {
                     CommonRouter.routeCallback(request)
                 }
             }
+
+
+            location {
+                val chat = message?.chat ?: return@location
+                val messageId = message?.messageId ?: return@location
+
+                val userDto = User.About.fromChat(chat)
+
+                CallbackRequest.fromCallbackUser(
+                    CommonRoutes.LOCATION.toString(), userDto, bot, ChatId.fromId(chat.id), messageId,
+                )?.let { request ->
+                    request.user.updateCompletion {
+                        it.latitude = location.latitude
+                        it.longitude = location.longitude
+
+                        it
+                    }
+
+                    request.writeButton("Ваше локация заптсана")
+                }
+            }
         }
     }
 
@@ -61,15 +83,27 @@ fun main(args: Array<String>) = runBlocking {
             "Starting migrations...",
         )
 
-        try {
-            DatabaseObject.migrateDatabase()
-            DatabaseObject.seedDatabase()
-        }
-        catch (ex: Exception) {
-            bot.sendMessage(
-                ChatId.fromId(EnvVars.AYBJAXDIMEDUS),
-                "Error on migration",
-            )
+        when(args[0]) {
+            "migrate" -> try {
+                DatabaseObject.migrateDatabase()
+                DatabaseObject.seedDatabase()
+            }
+            catch (ex: Exception) {
+                bot.sendMessage(
+                    ChatId.fromId(EnvVars.AYBJAXDIMEDUS),
+                    "Error on migration: ${ex.message}",
+                )
+            }
+
+            "user" -> try {
+                DatabaseObject.migrateUser()
+            }
+            catch (ex: Exception) {
+                bot.sendMessage(
+                    ChatId.fromId(EnvVars.AYBJAXDIMEDUS),
+                    "Error on migration: ${ex.message}",
+                )
+            }
         }
 
         bot.sendMessage(

@@ -7,4 +7,5 @@ enum class CommonRoutes: Routes {
     GREET_USER,
     ACCOUNT_PAGE,
     CHOOSE_PRODUCT,
+    LOCATION,
 }

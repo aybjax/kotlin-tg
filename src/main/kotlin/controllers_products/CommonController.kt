@@ -31,7 +31,7 @@ object CommonController {
         ))
 
         transaction {
-            request.user.updateConfiguration { User.Configurations() }
+            request.user.updateRouting { User.Routing() }
         }
 
         request.writeButton("Можно вернуться на эту страницу нажав кнопку снизу", listOf("\uD83C\uDFE0 Домой"))
@@ -55,6 +55,10 @@ object CommonController {
             )
         ))
 
+        return true
+    }
+
+    fun location(request: CallbackRequest): Boolean {
         return true
     }
 }

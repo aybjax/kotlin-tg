@@ -6,13 +6,11 @@ import controllers_products.MechanicumController
 import controllers_products.RoqedController
 import dataclasses.RouteQueryPair
 import dataclasses.queries
-import db.models.CourseMechanicumDao
 import db.models.User
 import extensions.getFirstWord
 import extensions.normalizedString
 import routes.enums.CommonRoutes
 import routes.enums.EmptyRoutes
-import routes.enums.MechanicumRoutes
 
 /**
  * Request object for text and commands
@@ -49,7 +47,7 @@ class TextRequest(
      */
     private fun getCallbackQuery(): RouteQueryPair {
         val firstWord = text.getFirstWord()
-        val previousQuery = CallbackRequest.getRouteEnumFromString(user.configurations?.previous_query ?: "") ?: EmptyRoutes
+        val previousQuery = CallbackRequest.getRouteEnumFromString(user.routing?.previous_query ?: "") ?: EmptyRoutes
 
         if(firstWord.isEmpty()) return EmptyRoutes queries emptyMap()
 
