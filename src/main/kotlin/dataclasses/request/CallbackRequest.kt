@@ -293,7 +293,7 @@ sealed class CallbackRequest(
 
             val route = routeQuery[0]
             val query = try {
-                routeQuery[1].split(";").map {
+                routeQuery[1].split("&").map {
                     it.split("=")
                 }.map {
                     it[0] to it[1]

@@ -14,7 +14,6 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import routes.CommonRouter
 import routes.enums.EmptyRoutes
 import routes.enums.MechanicumRoutes
-import routes.enums.RoqedRoutes
 import routes.enums.Routes
 
 object RoqedController {
@@ -360,7 +359,7 @@ object RoqedController {
         )
     }
 
-    fun getCallbackQuery(previousQuery: Routes, text: String, request: TextRequest): RouteQueryPair? {
+    fun textToCallbackQuery(previousQuery: Routes, text: String, request: TextRequest): RouteQueryPair? {
         if(previousQuery == MechanicumRoutes.MECHANICUM_SEARCH_NAME) {
             request.user.updateRouting {
                 it.searchName = text.split(' ').joinToString("%", prefix = "%", postfix = "%")

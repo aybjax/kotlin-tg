@@ -58,6 +58,7 @@ class User(id: EntityID<Int>): IntEntity(id)
                         this.userId = userDto.user_id
                         routing = Routing()
                         about = userDto
+                        completion = Completion()
                     }
                 }
             }
@@ -150,7 +151,22 @@ class User(id: EntityID<Int>): IntEntity(id)
         var correct_processes: Int? = null,
         var longitude: Float? = null,
         var latitude: Float? = null,
-    )
+        var processCompletions: MutableList<ProcessCompletion> = mutableListOf<ProcessCompletion>(),
+
+        ) {
+        @JsonClass(generateAdapter = true)
+        data class ProcessCompletion(
+            val process_order: Int,
+            var status: CompletionStatus,
+            var comment: String?,
+        )
+
+        enum class CompletionStatus {
+            DONE,
+            FAIL,
+            PENDING,
+        }
+    }
 
     /**
      * Updates current (or if absent new) configuration and returns it

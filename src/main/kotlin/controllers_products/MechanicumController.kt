@@ -9,6 +9,7 @@ import dataclasses.request.TextRequest
 import db.models.CourseMechanicumDao
 import db.models.ProcessMechanicumDao
 import db.models.Processes_Mechanicum
+import db.models.User
 import extensions.plusOne
 import extensions.roundDecimal
 import org.jetbrains.exposed.sql.and
@@ -254,8 +255,10 @@ object MechanicumController {
 
     fun startCourse(request: CallbackRequest): Boolean {
         val nextOrder = request.user.completion?.next_process_order ?: return false
+        val currentOrder = nextOrder - 1
         val processCount = request.user.completion?.total_processes ?: return false
         val courseId = request.user.completion?.course_id ?: return false
+        var endProcess = false
 
         val process = transaction {
             ProcessMechanicumDao.find {
@@ -266,23 +269,97 @@ object MechanicumController {
             firstOrNull()
         }
 
+        request.getQueryOrNull<String>("action")?.let { action ->
+            if(action == "done") {
+                request.user.updateCompletion { completion ->
+                    var alreadyWasThere = false
+                    completion.correct_processes = completion.correct_processes?.plusOne()
+                    val current = completion.processCompletions.firstOrNull() { processCompletion ->
+                        alreadyWasThere = true
+                        processCompletion.process_order == currentOrder
+                    }?.let {
+                        it.status = User.Completion.CompletionStatus.DONE
+                        it
+                    } ?: User.Completion.ProcessCompletion(
+                        currentOrder,
+                        User.Completion.CompletionStatus.DONE,
+                        null,
+                    )
+
+                    if(alreadyWasThere) {
+                        completion.processCompletions.removeLast()
+                    }
+
+                    completion.processCompletions.add(
+                        current
+                    )
+
+                    completion
+                }
+            }
+            else if(action == "fail") {
+                request.user.updateCompletion {
+                    it.processCompletions.add(
+                        User.Completion.ProcessCompletion(
+                            currentOrder,
+                            User.Completion.CompletionStatus.FAIL,
+                            null,
+                        )
+                    )
+
+                    it
+                }
+                request.writeText("_Напишите причину:_")
+
+                return true
+            }
+            else if(action == "comment") {
+                request.writeText("_Напишите коммент:_")
+
+                return true
+            }
+            else if(action == "end") {
+                endProcess = true
+            }
+            else if(action == "comment_added") {
+                var notContinue = false;
+
+                request.user.updateCompletion { it ->
+                    val current = it.processCompletions.firstOrNull() { processCompletion ->
+                        processCompletion.process_order == currentOrder
+                    } ?: kotlin.run {
+                        notContinue = true
+
+                        User.Completion.ProcessCompletion(
+                            currentOrder,
+                            User.Completion.CompletionStatus.PENDING,
+                            ""
+                        )
+                    }
+
+                    current.comment = current.comment?.let { prev_comm ->
+                        prev_comm + if(prev_comm.isNotEmpty()) "\n" else "" + request.getQuery<String>("text");
+                    } ?: request.getQuery<String>("text")
+
+                    if(it.processCompletions.isNotEmpty()) it.processCompletions.removeLast()
+                    it.processCompletions.add(current)
+
+                    it
+                }
+
+                if(notContinue) return true
+            }
+
+            return@let
+        }
+
         request.user.updateCompletion {
             it.next_process_order = it.next_process_order?.plusOne()
 
             it
         }
 
-        request.getQueryOrNull<String>("action")?.let { action ->
-            if(action == "done") {
-                request.user.updateCompletion {
-                    it.correct_processes = it.correct_processes?.plusOne()
-
-                    it
-                }
-            }
-        }
-
-        if(nextOrder > processCount) {
+        if(nextOrder > processCount || endProcess) {
             transaction {
                 CourseMechanicumDao.findById(courseId)
             } ?: return false
@@ -311,8 +388,14 @@ object MechanicumController {
                         """.trimIndent()
 
             val buttons = listOf(
-                Anchor("Сделано", MechanicumRoutes.START_MECHANICUM_COURSE queries mapOf("action" to "done")),
-                Anchor("Пропустить", RouteQueryPair(MechanicumRoutes.START_MECHANICUM_COURSE))
+                listOf(
+                    Anchor("Сделано", MechanicumRoutes.START_MECHANICUM_COURSE queries mapOf("action" to "done")),
+                    Anchor("Пропустить", MechanicumRoutes.START_MECHANICUM_COURSE queries mapOf("action" to "fail")),
+                ),
+                listOf(
+                    Anchor("Комментарий", MechanicumRoutes.START_MECHANICUM_COURSE queries mapOf("action" to "comment")),
+                    Anchor("Закончить", MechanicumRoutes.START_MECHANICUM_COURSE queries mapOf("action" to "end")),
+                )
             )
 
             request.writeLink(msg, buttons)
@@ -361,7 +444,7 @@ object MechanicumController {
         )
     }
 
-    fun getCallbackQuery(previousQuery: Routes, text: String, request: TextRequest): RouteQueryPair? {
+    fun textToCallbackQuery(previousQuery: Routes, text: String, request: TextRequest): RouteQueryPair? {
         if(previousQuery == MechanicumRoutes.MECHANICUM_SEARCH_NAME) {
             request.user.updateRouting {
                 it.searchName = text.split(' ').joinToString("%", prefix = "%", postfix = "%")
@@ -410,11 +493,19 @@ object MechanicumController {
                 it.course_id = id
                 it.next_process_order = 1
                 it.correct_processes = 0
+                it.processCompletions = mutableListOf<User.Completion.ProcessCompletion>()
 
                 it
             }
 
             return MechanicumRoutes.CHOSEN_MECHANICUM_COURSE_ID queries mapOf("course_id" to id.toString())
+        }
+
+        if(previousQuery == MechanicumRoutes.START_MECHANICUM_COURSE) {
+            return MechanicumRoutes.START_MECHANICUM_COURSE queries mapOf(
+                "action" to "comment_added",
+                 "text" to text,
+            )
         }
 
         return null

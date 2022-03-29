@@ -53,11 +53,11 @@ class TextRequest(
 
         if(greetingWords.contains(firstWord)) return CommonRoutes.GREET_USER queries emptyMap();
 
-        MechanicumController.getCallbackQuery(previousQuery, text, this)?.let {
+        MechanicumController.textToCallbackQuery(previousQuery, text, this)?.let {
             return it
         }
 
-        RoqedController.getCallbackQuery(previousQuery, text, this)?.let {
+        RoqedController.textToCallbackQuery(previousQuery, text, this)?.let {
             return it
         }
 
