@@ -25,14 +25,14 @@ sealed class Request(
     fun writeText(text: String, edit: Boolean = false) {
         if(edit) {
             bot.editMessageText(text = text, chatId = chatId,
-                parseMode = ParseMode.MARKDOWN,
+                parseMode = ParseMode.HTML,
                 messageId = messageId)
 
             return
         }
 
         bot.sendMessage(text = text, chatId = chatId,
-            parseMode = ParseMode.MARKDOWN)
+            parseMode = ParseMode.HTML)
     }
 
     /**
@@ -49,7 +49,7 @@ sealed class Request(
             bot.editMessageText(
                 chatId = chatId,
                 text = text,
-                parseMode = ParseMode.MARKDOWN,
+                parseMode = ParseMode.HTML,
                 replyMarkup = inlineKeyboardMarkup,
                 messageId = messageId,
             )
@@ -60,7 +60,7 @@ sealed class Request(
         bot.sendMessage(
             chatId = chatId,
             text = text,
-            parseMode = ParseMode.MARKDOWN,
+            parseMode = ParseMode.HTML,
             replyMarkup = inlineKeyboardMarkup,
         )
     }
@@ -82,7 +82,7 @@ sealed class Request(
             bot.editMessageText(
                 chatId = chatId,
                 text = text,
-                parseMode = ParseMode.MARKDOWN,
+                parseMode = ParseMode.HTML,
                 replyMarkup = inlineKeyboardMarkup,
                 messageId = messageId,
             )
@@ -93,7 +93,7 @@ sealed class Request(
         bot.sendMessage(
             chatId = chatId,
             text = text,
-            parseMode = ParseMode.MARKDOWN,
+            parseMode = ParseMode.HTML,
             replyMarkup = inlineKeyboardMarkup,
         )
     }
@@ -112,7 +112,7 @@ sealed class Request(
             bot.editMessageText(
                 chatId = chatId,
                 text = text,
-                parseMode = ParseMode.MARKDOWN,
+                parseMode = ParseMode.HTML,
                 replyMarkup = keyboardMarkup,
                 messageId = messageId,
             )
@@ -123,7 +123,7 @@ sealed class Request(
         bot.sendMessage(
             chatId = chatId,
             text = text,
-            parseMode = ParseMode.MARKDOWN,
+            parseMode = ParseMode.HTML,
             replyMarkup = keyboardMarkup,
         )
     }
@@ -156,7 +156,7 @@ sealed class Request(
             bot.editMessageText(
                 chatId = chatId,
                 text = text,
-                parseMode = ParseMode.MARKDOWN,
+                parseMode = ParseMode.HTML,
                 replyMarkup = keyboardMarkup,
                 messageId = messageId,
             )
@@ -167,7 +167,7 @@ sealed class Request(
         bot.sendMessage(
             chatId = chatId,
             text = text,
-            parseMode = ParseMode.MARKDOWN,
+            parseMode = ParseMode.HTML,
             replyMarkup = keyboardMarkup,
         )
     }

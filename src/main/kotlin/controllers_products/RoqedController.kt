@@ -14,6 +14,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import routes.CommonRouter
 import routes.enums.EmptyRoutes
 import routes.enums.MechanicumRoutes
+import routes.enums.RoqedRoutes
 import routes.enums.Routes
 
 object RoqedController {
@@ -21,7 +22,7 @@ object RoqedController {
      * List mechanicum courses: search by name and paginate
      */
     fun listCourses(request: CallbackRequest): Boolean {
-        val (courses, page, pageCount) = CourseMechanicumDao.getCoursePageCount(
+        val (courses, page, pageCount) = CourseRoqedDao.getCoursePageCount(
             request.user.routing?.searchName,
             RequestPage.fromString(request.getQueryOrNull("page"))
         )
@@ -31,22 +32,22 @@ object RoqedController {
         val coursesText = courses.joinToString("\n") {
             val description = it.description
 
-            "${it.id}. *${it.name}* ${ if(description.isNotEmpty())
-                "(`" else " "}$description${ if(description.isNotEmpty()) "`)" else ""}\n\n"
+            "${it.id}. <b>${it.name}</b> ${ if(description.isNotEmpty())
+                "(<pre>" else " "}$description${ if(description.isNotEmpty()) "</pre>)" else ""}\n\n"
         }
 
         val anchors = mutableListOf<Anchor>()
         if(page.isNotFirstPage()) {
             anchors.add(
-                Anchor(text = "⬅", MechanicumRoutes.MECHANICUM_COURSES queries mapOf("page" to page.prev.toString()))
+                Anchor(text = "⬅", RoqedRoutes.ROQED_COURSES queries mapOf("page" to page.prev.toString()))
             )
         }
         anchors.add(
-            Anchor(text = "Выбрать \uD83C\uDD97", RouteQueryPair(MechanicumRoutes.CHOOSE_MECHANICUM_COURSE_ID))
+            Anchor(text = "Выбрать \uD83C\uDD97", RouteQueryPair(RoqedRoutes.CHOOSE_ROQED_COURSE_ID))
         )
         if(page notLastPageFor pageCount) {
             anchors.add(
-                Anchor(text = "➡", MechanicumRoutes.MECHANICUM_COURSES queries mapOf("page" to page.next.toString()))
+                Anchor(text = "➡", RoqedRoutes.ROQED_COURSES queries mapOf("page" to page.next.toString()))
             )
         }
 
@@ -64,26 +65,26 @@ object RoqedController {
 
         if(page.isNotFirstPage()) {
             jumpButtons.add(
-                Anchor(text = "⏪⏪", RouteQueryPair(MechanicumRoutes.BACKWARDS_MECHANICUM_COURSES))
+                Anchor(text = "⏪⏪", RouteQueryPair(RoqedRoutes.BACKWARDS_ROQED_COURSES))
             )
         }
 
         if(page notLastPageFor pageCount) {
             jumpButtons.add(
-                Anchor(text = "⏩⏩", RouteQueryPair(MechanicumRoutes.FORWARD_MECHANICUM_COURSES))
+                Anchor(text = "⏩⏩", RouteQueryPair(RoqedRoutes.FORWARD_ROQED_COURSES))
             )
         }
 
         if(courses.isEmpty()) {
-            request.writeLink("*Ничего не найдено*", jumpButtons)
+            request.writeLink("<b>Ничего не найдено</b>", jumpButtons)
         }
 
         val buttons = mutableListOf(
-            Anchor(text = "\uD83D\uDD0D Поиск по названию", RouteQueryPair(MechanicumRoutes.MECHANICUM_SEARCH_NAME))
+            Anchor(text = "\uD83D\uDD0D Поиск по названию", RouteQueryPair(RoqedRoutes.ROQED_SEARCH_NAME))
         )
 
         if(! request.user.routing?.searchName.isNullOrEmpty()) {
-            buttons.add(Anchor(text = "❌ Отменить поиск", RouteQueryPair(MechanicumRoutes.MECHANICUM_SEARCH_NAME_CANCEL)))
+            buttons.add(Anchor(text = "❌ Отменить поиск", RouteQueryPair(RoqedRoutes.ROQED_SEARCH_NAME_CANCEL)))
         }
 
         request.writeLink(coursesText, listOf(
@@ -103,13 +104,13 @@ object RoqedController {
     }
 
     fun searchName(request: CallbackRequest): Boolean {
-        request.writeButton("_Поиск по названию курса в Mechanicum:_")
+        request.writeButton("<i>Поиск по названию курса в Mechanicum:</i>")
 
         return true
     }
 
     fun forwardCourses(request: CallbackRequest): Boolean {
-        request.writeLink("_Cтраниц для перелистывания:_", rewindButtons)
+        request.writeLink("<i>Cтраниц для перелистывания:</i>", rewindButtons)
 
         return true
     }
@@ -121,7 +122,7 @@ object RoqedController {
         return digit?.let {
             request.user.updateRouting { configurations ->
                 val prev_digit = configurations.previous_input ?: ""
-                val isCurrent = configurations.previous_input_route == MechanicumRoutes.FORWARD_MECHANICUM_INPUT.toString()
+                val isCurrent = configurations.previous_input_route == RoqedRoutes.FORWARD_ROQED_INPUT.toString()
 
                 if(digit == "10" && isCurrent) {
                     currentDigit = prev_digit.dropLast(1)
@@ -139,7 +140,7 @@ object RoqedController {
                 configurations
             }
 
-            request.writeLink("_Cтраниц для перелистывания:_ $currentDigit", rewindButtons, true)
+            request.writeLink("<i>Cтраниц для перелистывания:</i> $currentDigit", rewindButtons, true)
 
             true
         } ?:
@@ -163,7 +164,7 @@ object RoqedController {
     }
 
     fun backwordsCourses(request: CallbackRequest): Boolean {
-        request.writeLink("_Cтраниц для перелистывания:_", rewindButtons)
+        request.writeLink("<i>Cтраниц для перелистывания:</i>", rewindButtons)
 
         return true
     }
@@ -175,7 +176,7 @@ object RoqedController {
         return digit?.let {
             request.user.updateRouting { configurations ->
                 val prev_digit = configurations.previous_input ?: ""
-                val isCurrent = configurations.previous_input_route == MechanicumRoutes.BACKWARDS_MECHANICUM_INPUT.toString()
+                val isCurrent = configurations.previous_input_route == RoqedRoutes.BACKWARDS_ROQED_INPUT.toString()
 
                 if(digit == "10" && isCurrent) {
                     currentDigit = prev_digit.dropLast(1)
@@ -193,7 +194,7 @@ object RoqedController {
                 configurations
             }
 
-            request.writeLink("_Cтраниц для перелистывания:_ $currentDigit", rewindButtons, true)
+            request.writeLink("<i>Cтраниц для перелистывания:</i> $currentDigit", rewindButtons, true)
 
             true
         } ?:
@@ -220,29 +221,29 @@ object RoqedController {
         val buttons = request.user.routing?.course_ids?.map { listOf(it.toString()) } ?: emptyList()
         val finalButtons = buttons + listOf(listOf("\uD83C\uDFE0 Домой"))
 
-        request.writeButtons("_Введите номер курса_:", finalButtons)
+        request.writeButtons("<i>Введите номер курса</i>:", finalButtons)
 
         return true
     }
 
     fun courseChosen(request: CallbackRequest): Boolean {
         val course = transaction {
-            CourseMechanicumDao.findById(request.getQuery<Int>("course_id"))
+            CourseRoqedDao.findById(request.getQuery<Int>("course_id"))
         }
 
         request.writeButtons("""
-            *Курс выбран:*
+            <b>Курс выбран:</b>
             Вы можете отправить Вашу геолокацию (для мобильных усстройств)
         """.trimIndent(), locationText = "Отправить локацию")
 
         val msg = """
-                            _Номер курса:_ *${course?.id}*
-                            _Название курса:_ *${course?.name}*
-                            _Количество процессов:_ *${course?.processesCount}*
+                            <i>Номер курса:</i> <b>${course?.id}</b>
+                            <i>Название курса:</i> <b>${course?.name}</b>
+                            <i>Количество процессов:</i> <b>${course?.processesCount}</b>
                         """.trimIndent()
 
         val button = listOf(
-            Anchor("Начать" , RouteQueryPair(MechanicumRoutes.START_MECHANICUM_COURSE)),
+            Anchor("Начать" , RouteQueryPair(RoqedRoutes.START_ROQED_COURSE)),
         )
 
         request.writeLink(msg, button)
@@ -256,9 +257,9 @@ object RoqedController {
         val courseId = request.user.completion?.course_id ?: return false
 
         val process = transaction {
-            ProcessMechanicumDao.find {
-                (Processes_Mechanicum.course eq courseId).and {
-                    (Processes_Mechanicum.order eq nextOrder)
+            ProcessRoqedDao.find {
+                (Processes_Roqed.course eq courseId).and {
+                    (Processes_Roqed.order eq nextOrder)
                 }
             }.
             firstOrNull()
@@ -282,14 +283,14 @@ object RoqedController {
 
         if(nextOrder > processCount) {
             transaction {
-                CourseMechanicumDao.findById(courseId)
+                CourseRoqedDao.findById(courseId)
             } ?: return false
 
             val completion = request.user.completion
             val correct = completion?.correct_processes ?: 0
             val total = completion?.total_processes ?: -1
 
-            request.writeButton("*Курс пройден*: $correct из $total правильных")
+            request.writeButton("<b>Курс пройден</b>: $correct из $total правильных")
             request.writeButton("${(correct.toDouble()/total.toDouble() * 100).roundDecimal()}")
 
             request.user.updateCompletion {
@@ -304,13 +305,13 @@ object RoqedController {
         else {
             val msg = """
                             $nextOrder.
-                            *${process?.description?.trim()}*:
+                            <b>${process?.description?.trim()}</b>:
                             ${process?.detailing?.trim()}
                         """.trimIndent()
 
             val buttons = listOf(
-                Anchor("Сделано", MechanicumRoutes.START_MECHANICUM_COURSE queries mapOf("action" to "done")),
-                Anchor("Пропустить", RouteQueryPair(MechanicumRoutes.START_MECHANICUM_COURSE))
+                Anchor("Сделано", RoqedRoutes.START_ROQED_COURSE queries mapOf("action" to "done")),
+                Anchor("Пропустить", RouteQueryPair(RoqedRoutes.START_ROQED_COURSE))
             )
 
             request.writeLink(msg, buttons)
@@ -326,7 +327,7 @@ object RoqedController {
             it
         }
 
-        request.updateRouteQuery(MechanicumRoutes.MECHANICUM_COURSES)?.let {
+        request.updateRouteQuery(RoqedRoutes.ROQED_COURSES)?.let {
             CommonRouter.routeCallback(it)
         }
 
@@ -337,72 +338,72 @@ object RoqedController {
     val rewindButtons: List<List<Anchor>> by lazy {
         listOf(
             listOf(
-                Anchor("1", MechanicumRoutes.FORWARD_MECHANICUM_INPUT queries mapOf("digit" to "1")),
-                Anchor("2", MechanicumRoutes.FORWARD_MECHANICUM_INPUT queries mapOf("digit" to "2")),
-                Anchor("3", MechanicumRoutes.FORWARD_MECHANICUM_INPUT queries mapOf("digit" to "3")),
+                Anchor("1", RoqedRoutes.FORWARD_ROQED_INPUT queries mapOf("digit" to "1")),
+                Anchor("2", RoqedRoutes.FORWARD_ROQED_INPUT queries mapOf("digit" to "2")),
+                Anchor("3", RoqedRoutes.FORWARD_ROQED_INPUT queries mapOf("digit" to "3")),
             ),
             listOf(
-                Anchor("4", MechanicumRoutes.FORWARD_MECHANICUM_INPUT queries mapOf("digit" to "4")),
-                Anchor("5", MechanicumRoutes.FORWARD_MECHANICUM_INPUT queries mapOf("digit" to "5")),
-                Anchor("6", MechanicumRoutes.FORWARD_MECHANICUM_INPUT queries mapOf("digit" to "6")),
+                Anchor("4", RoqedRoutes.FORWARD_ROQED_INPUT queries mapOf("digit" to "4")),
+                Anchor("5", RoqedRoutes.FORWARD_ROQED_INPUT queries mapOf("digit" to "5")),
+                Anchor("6", RoqedRoutes.FORWARD_ROQED_INPUT queries mapOf("digit" to "6")),
             ),
             listOf(
-                Anchor("7", MechanicumRoutes.FORWARD_MECHANICUM_INPUT queries mapOf("digit" to "7")),
-                Anchor("8", MechanicumRoutes.FORWARD_MECHANICUM_INPUT queries mapOf("digit" to "8")),
-                Anchor("9", MechanicumRoutes.FORWARD_MECHANICUM_INPUT queries mapOf("digit" to "9")),
+                Anchor("7", RoqedRoutes.FORWARD_ROQED_INPUT queries mapOf("digit" to "7")),
+                Anchor("8", RoqedRoutes.FORWARD_ROQED_INPUT queries mapOf("digit" to "8")),
+                Anchor("9", RoqedRoutes.FORWARD_ROQED_INPUT queries mapOf("digit" to "9")),
             ),
             listOf(
-                Anchor("0", MechanicumRoutes.FORWARD_MECHANICUM_INPUT queries mapOf("digit" to "0")),
-                Anchor("\uD83C\uDD97", RouteQueryPair(MechanicumRoutes.FORWARD_MECHANICUM_INPUT)),
-                Anchor("⬅️", MechanicumRoutes.FORWARD_MECHANICUM_INPUT queries mapOf("digit" to "10")),
+                Anchor("0", RoqedRoutes.FORWARD_ROQED_INPUT queries mapOf("digit" to "0")),
+                Anchor("\uD83C\uDD97", RouteQueryPair(RoqedRoutes.FORWARD_ROQED_INPUT)),
+                Anchor("⬅️", RoqedRoutes.FORWARD_ROQED_INPUT queries mapOf("digit" to "10")),
             ),
         )
     }
 
     fun textToCallbackQuery(previousQuery: Routes, text: String, request: TextRequest): RouteQueryPair? {
-        if(previousQuery == MechanicumRoutes.MECHANICUM_SEARCH_NAME) {
+        if(previousQuery == RoqedRoutes.ROQED_SEARCH_NAME) {
             request.user.updateRouting {
                 it.searchName = text.split(' ').joinToString("%", prefix = "%", postfix = "%")
 
                 it
             }
 
-            return MechanicumRoutes.MECHANICUM_COURSES queries emptyMap()
+            return RoqedRoutes.ROQED_COURSES queries emptyMap()
         }
 
-        if(previousQuery == MechanicumRoutes.BACKWARDS_MECHANICUM_COURSES ||
-            previousQuery == MechanicumRoutes.BACKWARDS_MECHANICUM_INPUT) {
+        if(previousQuery == RoqedRoutes.BACKWARDS_ROQED_COURSES ||
+            previousQuery == RoqedRoutes.BACKWARDS_ROQED_INPUT) {
             val page = (request.user.routing?.prev_page ?: 1) - text.toLong()
 
-            return MechanicumRoutes.MECHANICUM_COURSES queries mapOf("page" to page.toString())
+            return RoqedRoutes.ROQED_COURSES queries mapOf("page" to page.toString())
         }
 
-        if(previousQuery == MechanicumRoutes.FORWARD_MECHANICUM_COURSES ||
-            previousQuery == MechanicumRoutes.FORWARD_MECHANICUM_INPUT) {
+        if(previousQuery == RoqedRoutes.FORWARD_ROQED_COURSES ||
+            previousQuery == RoqedRoutes.FORWARD_ROQED_INPUT) {
             val page = (request.user.routing?.prev_page ?: 1) + text.toLong()
 
-            return MechanicumRoutes.MECHANICUM_COURSES queries mapOf("page" to page.toString())
+            return RoqedRoutes.ROQED_COURSES queries mapOf("page" to page.toString())
         }
 
-        if(previousQuery == MechanicumRoutes.CHOOSE_MECHANICUM_COURSE_ID ||
-            previousQuery == MechanicumRoutes.MECHANICUM_COURSES) {
+        if(previousQuery == RoqedRoutes.CHOOSE_ROQED_COURSE_ID ||
+            previousQuery == RoqedRoutes.ROQED_COURSES) {
             val id = text.toInt()
             val ids = request.user.routing?.course_ids ?: emptyList()
 
             if (! ids.contains(id)) {
-                request.writeButton("Номер курса должны быть *${ids.joinToString(", ")}*")
+                request.writeButton("Номер курса должны быть <b>${ids.joinToString(", ")}</b>")
 
 
                 val buttons = request.user.routing?.course_ids?.map { listOf(it.toString()) } ?: emptyList()
                 val finalButtons = buttons + listOf(listOf("\uD83C\uDFE0 Домой"))
 
-                request.writeButtons("_Введите номер курса_:", finalButtons)
+                request.writeButtons("<i>Введите номер курса</i>:", finalButtons)
 
                 return EmptyRoutes queries emptyMap()
             }
 
             request.user.updateCompletion {
-                val course = CourseMechanicumDao.findById(id)
+                val course = CourseRoqedDao.findById(id)
 
                 it.total_processes = course?.processesCount ?: 0
                 it.course_id = id
@@ -412,7 +413,7 @@ object RoqedController {
                 it
             }
 
-            return MechanicumRoutes.CHOSEN_MECHANICUM_COURSE_ID queries mapOf("course_id" to id.toString())
+            return RoqedRoutes.CHOSEN_ROQED_COURSE_ID queries mapOf("course_id" to id.toString())
         }
 
         return null

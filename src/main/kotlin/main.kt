@@ -9,6 +9,7 @@ import db.models.User
 import kotlinx.coroutines.runBlocking
 import dataclasses.request.CallbackRequest
 import dataclasses.request.TextRequest
+import examples.telegramsamples.runDispatcherExample
 import routes.CommonRouter
 import routes.Layout
 import routes.enums.CommonRoutes
@@ -69,7 +70,7 @@ fun main(args: Array<String>) = runBlocking {
                         it
                     }
 
-                    request.writeButton("Ваше локация заптсана")
+                    request.writeButton("Ваша локация записана")
                 }
             }
         }

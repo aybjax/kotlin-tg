@@ -34,8 +34,8 @@ object MechanicumController {
         val coursesText = courses.joinToString("\n") {
             val description = it.description
 
-            "${it.id}. *${it.name}* ${ if(description.isNotEmpty())
-                "(`" else " "}$description${ if(description.isNotEmpty()) "`)" else ""}\n\n"
+            "${it.id}. <b>${it.name}</b> ${ if(description.isNotEmpty())
+                "(<pre>" else " "}$description${ if(description.isNotEmpty()) "</pre>)" else ""}\n\n"
         }
 
         val anchors = mutableListOf<Anchor>()
@@ -78,7 +78,7 @@ object MechanicumController {
         }
 
         if(courses.isEmpty()) {
-            request.writeLink("*Ничего не найдено*", jumpButtons)
+            request.writeLink("<b>Ничего не найдено</b>", jumpButtons)
         }
 
         val buttons = mutableListOf(
@@ -106,13 +106,13 @@ object MechanicumController {
     }
 
     fun searchName(request: CallbackRequest): Boolean {
-        request.writeButton("_Поиск по названию курса в Mechanicum:_")
+        request.writeButton("<i>Поиск по названию курса в Mechanicum:</i>")
 
         return true
     }
 
     fun forwardCourses(request: CallbackRequest): Boolean {
-        request.writeLink("_Cтраниц для перелистывания:_", rewindButtons)
+        request.writeLink("<i>Cтраниц для перелистывания:</i>", rewindButtons)
 
         return true
     }
@@ -142,7 +142,7 @@ object MechanicumController {
                 configurations
             }
 
-            request.writeLink("_Cтраниц для перелистывания:_ $currentDigit", rewindButtons, true)
+            request.writeLink("<i>Cтраниц для перелистывания:</i> $currentDigit", rewindButtons, true)
 
             true
         } ?:
@@ -166,7 +166,7 @@ object MechanicumController {
     }
 
     fun backwordsCourses(request: CallbackRequest): Boolean {
-        request.writeLink("_Cтраниц для перелистывания:_", rewindButtons)
+        request.writeLink("<i>Cтраниц для перелистывания:</i>", rewindButtons)
 
         return true
     }
@@ -196,7 +196,7 @@ object MechanicumController {
                 configurations
             }
 
-            request.writeLink("_Cтраниц для перелистывания:_ $currentDigit", rewindButtons, true)
+            request.writeLink("<i>Cтраниц для перелистывания:</i> $currentDigit", rewindButtons, true)
 
             true
         } ?:
@@ -223,7 +223,7 @@ object MechanicumController {
         val buttons = request.user.routing?.course_ids?.map { listOf(it.toString()) } ?: emptyList()
         val finalButtons = buttons + listOf(listOf("\uD83C\uDFE0 Домой"))
 
-        request.writeButtons("_Введите номер курса_:", finalButtons)
+        request.writeButtons("<i>Введите номер курса</i>:", finalButtons)
 
         return true
     }
@@ -234,14 +234,14 @@ object MechanicumController {
         }
 
         request.writeButtons("""
-            *Курс выбран:*
+            <b>Курс выбран:</b>
             Вы можете отправить Вашу геолокацию (для мобильных усстройств)
         """.trimIndent(), locationText = "Отправить локацию")
 
         val msg = """
-                            _Номер курса:_ *${course?.id}*
-                            _Название курса:_ *${course?.name}*
-                            _Количество процессов:_ *${course?.processesCount}*
+                            <i>Номер курса:</i> <b>${course?.id}</b>
+                            <i>Название курса:</i> <b>${course?.name}</b>
+                            <i>Количество процессов:</i> <b>${course?.processesCount}</b>
                         """.trimIndent()
 
         val button = listOf(
@@ -309,12 +309,12 @@ object MechanicumController {
 
                     it
                 }
-                request.writeText("_Напишите причину:_")
+                request.writeText("<i>Напишите причину:</i>")
 
                 return true
             }
             else if(action == "comment") {
-                request.writeText("_Напишите коммент:_")
+                request.writeText("<i>Напишите комментарий:</i>")
 
                 return true
             }
@@ -368,7 +368,7 @@ object MechanicumController {
             val correct = completion?.correct_processes ?: 0
             val total = completion?.total_processes ?: -1
 
-            request.writeButton("*Курс пройден*: $correct из $total правильных")
+            request.writeButton("<b>Курс пройден</b>: $correct из $total правильных")
             request.writeButton("${(correct.toDouble()/total.toDouble() * 100).roundDecimal()}")
 
             request.user.updateCompletion {
@@ -383,7 +383,7 @@ object MechanicumController {
         else {
             val msg = """
                             $nextOrder.
-                            *${process?.description?.trim()}*:
+                            <b>${process?.description?.trim()}</b>:
                             ${process?.detailing?.trim()}
                         """.trimIndent()
 
@@ -475,13 +475,13 @@ object MechanicumController {
             val ids = request.user.routing?.course_ids ?: emptyList()
 
             if (! ids.contains(id)) {
-                request.writeButton("Номер курса должны быть *${ids.joinToString(", ")}*")
+                request.writeButton("Номер курса должны быть <b>${ids.joinToString(", ")}</b>")
 
 
                 val buttons = request.user.routing?.course_ids?.map { listOf(it.toString()) } ?: emptyList()
                 val finalButtons = buttons + listOf(listOf("\uD83C\uDFE0 Домой"))
 
-                request.writeButtons("_Введите номер курса_:", finalButtons)
+                request.writeButtons("<i>Введите номер курса</i>:", finalButtons)
 
                 return EmptyRoutes queries emptyMap()
             }
