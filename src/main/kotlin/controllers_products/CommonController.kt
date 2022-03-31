@@ -13,7 +13,7 @@ object CommonController {
      *
      */
     fun redirectNotImplemented(request: CallbackRequest): Boolean {
-        request.writeButton("*Доступ только для разработчиков*")
+        request.writeButton("<b>Доступ только для разработчиков</b>")
         home(request)
 
         return false
@@ -23,7 +23,7 @@ object CommonController {
      * Welcome message
      */
     fun home(request: Request): Boolean {
-        val text = "Вас приветствует ассистент телеграм бот *VargatesBot*"
+        val text = "Вас приветствует ассистент телеграм бот <b>VargatesBot</b>"
 
         request.writeLink(text, listOf(
             listOf(Anchor(text = "\uD83D\uDC64 Личный кабинет",  RouteQueryPair(CommonRoutes.ACCOUNT_PAGE))),
@@ -40,7 +40,7 @@ object CommonController {
     }
 
     fun chooseProduct(request: CallbackRequest): Boolean {
-        request.writeLink("*Выберите продукт*:", listOf(
+        request.writeLink("<b>Выберите продукт</b>:", listOf(
             listOf(
                 Anchor(text = "\uD83D\uDE9C Mechanicum", RouteQueryPair(MechanicumRoutes.MECHANICUM_COURSES))
             ),

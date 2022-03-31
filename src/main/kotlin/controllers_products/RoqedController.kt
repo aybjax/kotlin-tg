@@ -8,6 +8,7 @@ import dataclasses.request.CallbackRequest
 import dataclasses.request.TextRequest
 import db.models.*
 import extensions.plusOne
+import extensions.roundDecimal
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
 import routes.CommonRouter
@@ -30,8 +31,8 @@ object RoqedController {
         val coursesText = courses.joinToString("\n") {
             val description = it.description
 
-            "${it.id}. *${it.name}* ${ if(description.isNotEmpty())
-                "(`" else " "}$description${ if(description.isNotEmpty()) "`)" else ""}\n\n"
+            "${it.id}. <b>${it.name}</b> ${ if(description.isNotEmpty())
+                "(<pre>" else " "}$description${ if(description.isNotEmpty()) "</pre>)" else ""}\n\n"
         }
 
         val anchors = mutableListOf<Anchor>()
@@ -74,7 +75,7 @@ object RoqedController {
         }
 
         if(courses.isEmpty()) {
-            request.writeLink("*Ничего не найдено*", jumpButtons)
+            request.writeLink("<b>Ничего не найдено</b>", jumpButtons)
         }
 
         val buttons = mutableListOf(
@@ -102,13 +103,12 @@ object RoqedController {
     }
 
     fun searchName(request: CallbackRequest): Boolean {
-        request.writeButton("_Поиск по названию курса в Roqed:_")
-
+        request.writeButton("<i>Поиск по названию курса в Mechanicum:</i>")
         return true
     }
 
     fun forwardCourses(request: CallbackRequest): Boolean {
-        request.writeLink("_Cтраниц для перелистывания:_", rewindButtons)
+        request.writeLink("<i>Cтраниц для перелистывания:</i>", rewindButtons)
 
         return true
     }
@@ -138,7 +138,7 @@ object RoqedController {
                 configurations
             }
 
-            request.writeLink("_Cтраниц для перелистывания:_ $currentDigit", rewindButtons, true)
+            request.writeLink("<i>Cтраниц для перелистывания:</i> $currentDigit", rewindButtons, true)
 
             true
         } ?:
@@ -162,7 +162,7 @@ object RoqedController {
     }
 
     fun backwordsCourses(request: CallbackRequest): Boolean {
-        request.writeLink("_Cтраниц для перелистывания:_", rewindButtons)
+        request.writeLink("<i>Cтраниц для перелистывания:</i>", rewindButtons)
 
         return true
     }
@@ -192,7 +192,7 @@ object RoqedController {
                 configurations
             }
 
-            request.writeLink("_Cтраниц для перелистывания:_ $currentDigit", rewindButtons, true)
+            request.writeLink("<i>Cтраниц для перелистывания:</i> $currentDigit", rewindButtons, true)
 
             true
         } ?:
@@ -219,7 +219,7 @@ object RoqedController {
         val buttons = request.user.routing?.course_ids?.map { listOf(it.toString()) } ?: emptyList()
         val finalButtons = buttons + listOf(listOf("\uD83C\uDFE0 Домой"))
 
-        request.writeButtons("_Введите номер курса_:", finalButtons)
+        request.writeButtons("<i>Введите номер курса</i>:", finalButtons)
 
         return true
     }
@@ -230,27 +230,27 @@ object RoqedController {
         }
 
         request.writeButtons("""
-            *Курс выбран:*
+            <b>Курс выбран:</b>
             Вы можете отправить Вашу геолокацию (для мобильных усстройств)
         """.trimIndent(), locationText = "Отправить локацию")
 
         val msg = """
-                            _Номер курса:_ *${course?.id}*
-                            _Название курса:_ *${course?.name}*
-                            _Количество процессов:_ *${course?.processesCount}*
+                            <i>Номер курса:</i> <b>${course?.id}</b>
+                            <i>Название курса:</i> <b>${course?.name}</b>
+                            <i>Количество процессов:</i> <b>${course?.processesCount}</b>
                         """.trimIndent()
 
-        if ((course?.processesCount ?: 0) > 0) {
-            val button = listOf(
-                Anchor("Начать", RouteQueryPair(RoqedRoutes.START_ROQED_COURSE)),
-            )
+        val button = listOf(
+            Anchor("Начать" , RouteQueryPair(RoqedRoutes.START_ROQED_COURSE)),
+        )
 
+        if ((course?.processesCount ?: 0) > 0) {
             request.writeLink(msg, button)
         } else {
             request.writeButton(buildString {
                 this.append(msg)
                 this.append('\n')
-                this.append("*К сожалению, курс пуст*")
+                this.append("<b>К сожалению, курс пуст</b>")
             })
         }
 
@@ -272,7 +272,7 @@ object RoqedController {
             }.
             firstOrNull()
         } ?: run {
-            request.writeButton("*Ошибка базы данных*")
+            request.writeButton("<b>Ошибка базы данных</b>")
 
             return true
         }
@@ -330,12 +330,12 @@ object RoqedController {
                     completion
                 }
 
-                request.writeButton("_Причина пропуска:_")
+                request.writeButton("<i>Причина пропуска:</i>")
 
                 return true
             }
             else if(action == "comment") {
-                request.writeButton("_Комментария:_")
+                request.writeButton("<i>Комментария:</i>")
 
                 return true
             }
@@ -400,19 +400,24 @@ object RoqedController {
             val correct = completion?.correct_processes ?: 0
             val total = completion?.total_processes ?: -1
 
-            request.writeButton("*Курс окончен*: $correct из $total правильных")
+            request.writeButton("<b>Курс пройден</b>: $correct из $total правильных")
+//            request.writeButton("${
+//                if(total > 0)
+//                    (correct.toDouble()/total.toDouble() * 100).roundDecimal()
+//                    else 0
+//            }%")
 
             request.user.completion?.processCompletions?.filter {
                 it.status == User.Completion.CompletionStatus.FAIL
             }?.let { fails ->
                 val failText = buildString {
                     if(fails.isNotEmpty()) {
-                        this.append("*Пропущенные процессы:*\n\n")
+                        this.append("<b>Пропущенные процессы:</b>\n\n")
 
                         fails.forEach {
                             if(! it.comment.isNullOrBlank()) {
-                                this.append("${it.process_order}. *${it.process_name}*:\n")
-                                this.append("\t\t\t_${it.comment?.split('\n')?.joinToString("\n\t\t") ?: ""}_\n")
+                                this.append("${it.process_order}. <b>${it.process_name}</b>:\n")
+                                this.append("\t\t\t<i>${it.comment?.split('\n')?.joinToString("\n\t\t") ?: ""}</i>\n")
                             }
                         }
                     }
@@ -427,12 +432,12 @@ object RoqedController {
             }?.let { withComments ->
                 val commentText = buildString {
                     if(withComments.isNotEmpty()) {
-                        this.append("*Оставили комментарий:*\n\n")
+                        this.append("<b>Оставили комментарий:</b>\n\n")
 
                         withComments.forEach {
                             if(! it.comment.isNullOrBlank()) {
-                                this.append("${it.process_order}. *${it.process_name}*:\n")
-                                this.append("\t\t\t_${it.comment?.split('\n')?.joinToString("\n\t\t") ?: ""}_\n")
+                                this.append("${it.process_order}. <b>${it.process_name}</b>:\n")
+                                this.append("\t\t\t<i>${it.comment?.split('\n')?.joinToString("\n\t\t") ?: ""}</i>\n")
                             }
                         }
                     }
@@ -453,7 +458,7 @@ object RoqedController {
         else {
             val msg = """
                             $nextOrder.
-                            *${process?.description?.trim()}*:
+                            <b>${process?.description?.trim()}</b>:
                             ${process?.detailing?.trim()}
                         """.trimIndent()
 
@@ -509,7 +514,7 @@ object RoqedController {
             listOf(
                 Anchor("0", RoqedRoutes.FORWARD_ROQED_INPUT queries mapOf("digit" to "0")),
                 Anchor("\uD83C\uDD97", RouteQueryPair(RoqedRoutes.FORWARD_ROQED_INPUT)),
-                Anchor("⬅️", RoqedRoutes.FORWARD_ROQED_INPUT queries mapOf("digit" to "10")),
+                Anchor("⬅", RoqedRoutes.FORWARD_ROQED_INPUT queries mapOf("digit" to "10")),
             ),
         )
     }
@@ -545,13 +550,13 @@ object RoqedController {
             val ids = request.user.routing?.course_ids ?: emptyList()
 
             if (! ids.contains(id)) {
-                request.writeButton("Номер курса должны быть *${ids.joinToString(", ")}*")
+                request.writeButton("Номер курса должны быть <b>${ids.joinToString(", ")}</b>")
 
 
                 val buttons = request.user.routing?.course_ids?.map { listOf(it.toString()) } ?: emptyList()
                 val finalButtons = buttons + listOf(listOf("\uD83C\uDFE0 Домой"))
 
-                request.writeButtons("_Введите номер курса_:", finalButtons)
+                request.writeButtons("<i>Введите номер курса</i>:", finalButtons)
 
                 return EmptyRoutes queries emptyMap()
             }
