@@ -69,7 +69,7 @@ fun main(args: Array<String>) = runBlocking {
                         it
                     }
 
-                    request.writeButton("Ваше локация заптсана")
+                    request.writeButton("*Ваша локация записана:*\nширота - ${location.latitude}\nдолгота - ${location.longitude}")
                 }
             }
         }

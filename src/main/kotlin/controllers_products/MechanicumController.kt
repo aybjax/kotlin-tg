@@ -11,7 +11,6 @@ import db.models.ProcessMechanicumDao
 import db.models.Processes_Mechanicum
 import db.models.User
 import extensions.plusOne
-import extensions.roundDecimal
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
 import routes.CommonRouter
@@ -244,11 +243,19 @@ object MechanicumController {
                             _Количество процессов:_ *${course?.processesCount}*
                         """.trimIndent()
 
-        val button = listOf(
-            Anchor("Начать" , RouteQueryPair(MechanicumRoutes.START_MECHANICUM_COURSE)),
-        )
+        if ((course?.processesCount ?: 0) > 0) {
+            val button = listOf(
+                Anchor("Начать" , RouteQueryPair(MechanicumRoutes.START_MECHANICUM_COURSE)),
+            )
 
-        request.writeLink(msg, button)
+            request.writeLink(msg, button)
+        } else {
+            request.writeButton(buildString {
+                this.append(msg)
+                this.append('\n')
+                this.append("*К сожалению, курс пуст*")
+            })
+        }
 
         return true
     }
@@ -274,7 +281,7 @@ object MechanicumController {
                 request.user.updateCompletion { completion ->
                     var alreadyWasThere = false
                     completion.correct_processes = completion.correct_processes?.plusOne()
-                    val current = completion.processCompletions.firstOrNull() { processCompletion ->
+                    val current = completion.processCompletions.lastOrNull() { processCompletion ->
                         alreadyWasThere = true
                         processCompletion.process_order == currentOrder
                     }?.let {
@@ -282,6 +289,7 @@ object MechanicumController {
                         it
                     } ?: User.Completion.ProcessCompletion(
                         currentOrder,
+                        process?.description ?: "",
                         User.Completion.CompletionStatus.DONE,
                         null,
                     )
@@ -298,23 +306,35 @@ object MechanicumController {
                 }
             }
             else if(action == "fail") {
-                request.user.updateCompletion {
-                    it.processCompletions.add(
+                request.user.updateCompletion { completion ->
+                    val currentProcess = completion.processCompletions.firstOrNull {
+                        currentOrder == it.process_order
+                    }
+
+                    if(currentProcess != null) {
+                        currentProcess.status = User.Completion.CompletionStatus.PENDING_AFTER_FAIL
+
+                        return@updateCompletion completion
+                    }
+
+                    completion.processCompletions.add(
                         User.Completion.ProcessCompletion(
                             currentOrder,
-                            User.Completion.CompletionStatus.FAIL,
+                            process?.description ?: "",
+                            User.Completion.CompletionStatus.PENDING_AFTER_FAIL,
                             null,
                         )
                     )
 
-                    it
+                    completion
                 }
-                request.writeText("_Напишите причину:_")
+
+                request.writeButton("_Причина пропуска:_")
 
                 return true
             }
             else if(action == "comment") {
-                request.writeText("_Напишите коммент:_")
+                request.writeButton("_Комментария:_")
 
                 return true
             }
@@ -322,32 +342,43 @@ object MechanicumController {
                 endProcess = true
             }
             else if(action == "comment_added") {
-                var notContinue = false;
+                var removeLast = true;
 
-                request.user.updateCompletion { it ->
-                    val current = it.processCompletions.firstOrNull() { processCompletion ->
+                val currentCompletion = request.user.updateCompletion { it ->
+                    val current = it.processCompletions.lastOrNull() { processCompletion ->
                         processCompletion.process_order == currentOrder
                     } ?: kotlin.run {
-                        notContinue = true
+                        removeLast = false
 
                         User.Completion.ProcessCompletion(
                             currentOrder,
+                            process?.description ?: "",
                             User.Completion.CompletionStatus.PENDING,
                             ""
                         )
                     }
 
                     current.comment = current.comment?.let { prev_comm ->
-                        prev_comm + if(prev_comm.isNotEmpty()) "\n" else "" + request.getQuery<String>("text");
+                        prev_comm + (if(prev_comm.isNotEmpty()) "\n" else "") + request.getQuery<String>("text");
                     } ?: request.getQuery<String>("text")
 
-                    if(it.processCompletions.isNotEmpty()) it.processCompletions.removeLast()
+                    if(it.processCompletions.isNotEmpty() && removeLast) it.processCompletions.removeLast()
                     it.processCompletions.add(current)
 
                     it
                 }
 
-                if(notContinue) return true
+                if(currentCompletion?.processCompletions?.last()?.status == User.Completion.CompletionStatus.PENDING) {
+                    return true
+                }
+
+                if(currentCompletion?.processCompletions?.last()?.status == User.Completion.CompletionStatus.PENDING_AFTER_FAIL) {
+                    request.user.updateCompletion {
+                        it.processCompletions?.last()?.status = User.Completion.CompletionStatus.FAIL
+
+                        it
+                    }
+                }
             }
 
             return@let
@@ -368,8 +399,46 @@ object MechanicumController {
             val correct = completion?.correct_processes ?: 0
             val total = completion?.total_processes ?: -1
 
-            request.writeButton("*Курс пройден*: $correct из $total правильных")
-            request.writeButton("${(correct.toDouble()/total.toDouble() * 100).roundDecimal()}")
+            request.writeButton("*Курс окончен*: $correct из $total правильных")
+
+            request.user.completion?.processCompletions?.filter {
+                it.status == User.Completion.CompletionStatus.FAIL
+            }?.let { fails ->
+                val failText = buildString {
+                    if(fails.isNotEmpty()) {
+                        this.append("*Пропущенные процессы:*\n\n")
+
+                        fails.forEach {
+                            if(! it.comment.isNullOrBlank()) {
+                                this.append("${it.process_order}. *${it.process_name}*:\n")
+                                this.append("\t\t\t_${it.comment?.split('\n')?.joinToString("\n\t\t") ?: ""}_\n")
+                            }
+                        }
+                    }
+                }
+
+                request.writeButton(failText)
+            }
+
+            request.user.completion?.processCompletions?.filterNot {
+                it.status == User.Completion.CompletionStatus.FAIL ||
+                        it.comment.isNullOrBlank()
+            }?.let { withComments ->
+                val commentText = buildString {
+                    if(withComments.isNotEmpty()) {
+                        this.append("*Оставили комментарий:*\n\n")
+
+                        withComments.forEach {
+                            if(! it.comment.isNullOrBlank()) {
+                                this.append("${it.process_order}. *${it.process_name}*:\n")
+                                this.append("\t\t\t_${it.comment?.split('\n')?.joinToString("\n\t\t") ?: ""}_\n")
+                            }
+                        }
+                    }
+                }
+
+                request.writeButton(commentText)
+            }
 
             request.user.updateCompletion {
                 it.course_id = null

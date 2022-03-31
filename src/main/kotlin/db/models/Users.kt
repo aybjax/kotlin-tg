@@ -138,6 +138,7 @@ class User(id: EntityID<Int>): IntEntity(id)
         var searchName: String? = null,
         var previous_input: String? = null,
         var previous_input_route: String? = null,
+        var is_previous_done: Boolean = false,
     )
 
     /**
@@ -157,6 +158,7 @@ class User(id: EntityID<Int>): IntEntity(id)
         @JsonClass(generateAdapter = true)
         data class ProcessCompletion(
             val process_order: Int,
+            val process_name: String,
             var status: CompletionStatus,
             var comment: String?,
         )
@@ -165,6 +167,7 @@ class User(id: EntityID<Int>): IntEntity(id)
             DONE,
             FAIL,
             PENDING,
+            PENDING_AFTER_FAIL,
         }
     }
 
