@@ -1,5 +1,10 @@
 package controllers_products
 
+import com.github.kotlintelegrambot.entities.TelegramFile
+import com.itextpdf.text.*
+import com.itextpdf.text.pdf.PdfPCell
+import com.itextpdf.text.pdf.PdfPTable
+import com.itextpdf.text.pdf.PdfWriter
 import dataclasses.Anchor
 import dataclasses.RequestPage
 import dataclasses.RouteQueryPair
@@ -15,9 +20,12 @@ import extensions.plusOne
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
 import routes.CommonRouter
-import routes.enums.EmptyRoutes
 import routes.enums.MechanicumRoutes
 import routes.enums.Routes
+import java.io.File
+import java.io.FileOutputStream
+import java.util.stream.Stream
+
 
 object MechanicumController {
     /**
@@ -561,6 +569,56 @@ object MechanicumController {
 
                 it
             }
+
+            //
+//            val document = Document()
+//            PdfWriter.getInstance(document, FileOutputStream("aybjax.pdf"))
+//
+//            document.open()
+//
+//            val font = FontFactory.getFont(FontFactory.COURIER, 16F, BaseColor.BLACK)
+//            val chunk = Chunk("Hello World", font)
+//            document.add(chunk)
+//            document.close()
+//
+//            request.bot.sendDocument(request.chatId,
+//                TelegramFile.ByFile(File("aybjax.pdf")),
+//                caption = "Ваши результаты")
+            val document = Document()
+            PdfWriter.getInstance(document, FileOutputStream("aybjax.pdf"))
+
+            document.open()
+
+            val font = FontFactory.getFont(FontFactory.COURIER, 16F, BaseColor.BLACK)
+            val chunk = Chunk("Hello World", font)
+            document.add(chunk)
+
+            val table = PdfPTable(3)
+//            addTableHeader(table)
+            Stream.of("column header 1", "column header 2", "column header 3")
+                .forEach { columnTitle: String? ->
+                    val header = PdfPCell()
+                    header.backgroundColor = BaseColor.LIGHT_GRAY
+                    header.borderWidth = 2f
+                    header.phrase = Phrase(columnTitle)
+                    table.addCell(header)
+                }
+
+//            addRows(table)
+            table.addCell("row 1, col 1");
+            table.addCell("row 1, col 2");
+            table.addCell("row 1, col 3");
+
+
+//            addCustomRows(table)
+
+            document.add(table)
+
+            document.close()
+
+            request.bot.sendDocument(request.chatId,
+                TelegramFile.ByFile(File("aybjax.pdf")),
+                caption = "Ваши результаты")
         }
         else {
             val msg = """
