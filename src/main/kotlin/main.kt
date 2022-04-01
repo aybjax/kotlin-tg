@@ -3,26 +3,31 @@ import com.github.kotlintelegrambot.dispatch
 import com.github.kotlintelegrambot.dispatcher.*
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.logging.LogLevel
-import containers.EnvVars
+import dataclasses.geocoding.GeocodingResponse
+import variables.DatabaseTelegramEnvVars
 import db.DatabaseObject
 import db.models.User
 import kotlinx.coroutines.runBlocking
 import dataclasses.request.CallbackRequest
 import dataclasses.request.TextRequest
-import examples.telegramsamples.runDispatcherExample
+import geocoding.Geoapify
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import routes.CommonRouter
 import routes.Layout
 import routes.enums.CommonRoutes
+import variables.GeocodingApiVars
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 fun main(args: Array<String>) = runBlocking {
-    EnvVars.checkArgs()
+    DatabaseTelegramEnvVars.checkArgs()
 
     DatabaseObject.dbConnect()
 
     val bot = bot {
-        token = EnvVars.TELEGRAM_TOKEN
+        token = DatabaseTelegramEnvVars.TELEGRAM_TOKEN
         timeout = 30
         logLevel = LogLevel.All()
 
@@ -79,7 +84,7 @@ fun main(args: Array<String>) = runBlocking {
         println("Arguments present: starting migration")
 
         bot.sendMessage(
-            ChatId.fromId(EnvVars.AYBJAXDIMEDUS),
+            ChatId.fromId(DatabaseTelegramEnvVars.AYBJAXDIMEDUS),
             "Starting migrations...",
         )
 
@@ -90,7 +95,7 @@ fun main(args: Array<String>) = runBlocking {
             }
             catch (ex: Exception) {
                 bot.sendMessage(
-                    ChatId.fromId(EnvVars.AYBJAXDIMEDUS),
+                    ChatId.fromId(DatabaseTelegramEnvVars.AYBJAXDIMEDUS),
                     "Error on migration: ${ex.message}",
                 )
             }
@@ -100,14 +105,14 @@ fun main(args: Array<String>) = runBlocking {
             }
             catch (ex: Exception) {
                 bot.sendMessage(
-                    ChatId.fromId(EnvVars.AYBJAXDIMEDUS),
+                    ChatId.fromId(DatabaseTelegramEnvVars.AYBJAXDIMEDUS),
                     "Error on migration: ${ex.message}",
                 )
             }
         }
 
         bot.sendMessage(
-            ChatId.fromId(EnvVars.AYBJAXDIMEDUS),
+            ChatId.fromId(DatabaseTelegramEnvVars.AYBJAXDIMEDUS),
             "Ended migration",
         )
 
@@ -127,7 +132,7 @@ fun main(args: Array<String>) = runBlocking {
     val formatted = current.format(formatter)
 
     bot.sendMessage(
-        ChatId.fromId(EnvVars.AYBJAXDIMEDUS),
+        ChatId.fromId(DatabaseTelegramEnvVars.AYBJAXDIMEDUS),
         "$botName started at $formatted",
     )
 

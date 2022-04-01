@@ -1,6 +1,6 @@
 package db.migrations_products
 
-import containers.products.MechanicumAWS
+import variables.products.MechanicumAWS
 import dataclasses.aws.AwsCoursesDto
 import dataclasses.aws.AwsProcessesDto
 import dataclasses.aws.S3BucketReader

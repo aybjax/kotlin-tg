@@ -4,13 +4,13 @@ import com.github.kotlintelegrambot.bot
 import com.github.kotlintelegrambot.dispatch
 import com.github.kotlintelegrambot.dispatcher.text
 import com.github.kotlintelegrambot.entities.ChatId
-import containers.EnvVars
+import variables.DatabaseTelegramEnvVars
 
 fun runEchoExample() {
 
     val bot = bot {
 
-        token = EnvVars.TELEGRAM_TOKEN
+        token = DatabaseTelegramEnvVars.TELEGRAM_TOKEN
 
         dispatch {
 

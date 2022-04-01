@@ -6,11 +6,11 @@ import com.github.kotlintelegrambot.dispatcher.command
 import com.github.kotlintelegrambot.dispatcher.pollAnswer
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.polls.PollType.QUIZ
-import containers.EnvVars
+import variables.DatabaseTelegramEnvVars
 
 fun runPollExample() {
     bot {
-        token = EnvVars.TELEGRAM_TOKEN
+        token = DatabaseTelegramEnvVars.TELEGRAM_TOKEN
         dispatch {
             pollAnswer {
                 println("${pollAnswer.user.username} has selected the option ${pollAnswer.optionIds.lastOrNull()} in the poll ${pollAnswer.pollId}")

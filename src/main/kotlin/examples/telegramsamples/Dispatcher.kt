@@ -14,11 +14,11 @@ import com.github.kotlintelegrambot.entities.keyboard.KeyboardButton
 import com.github.kotlintelegrambot.extensions.filters.Filter
 import com.github.kotlintelegrambot.logging.LogLevel
 import com.github.kotlintelegrambot.network.fold
-import containers.EnvVars
+import variables.DatabaseTelegramEnvVars
 
 fun runDispatcherExample() {
     val bot = bot {
-        token = EnvVars.TELEGRAM_TOKEN
+        token = DatabaseTelegramEnvVars.TELEGRAM_TOKEN
         timeout = 30
         logLevel = LogLevel.Network.Body
 

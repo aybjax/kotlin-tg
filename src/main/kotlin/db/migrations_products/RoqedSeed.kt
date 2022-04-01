@@ -1,13 +1,10 @@
 package db.migrations_products
 
-import containers.products.MechanicumAWS
-import containers.products.RoqedAWS
+import variables.products.RoqedAWS
 import dataclasses.aws.AwsCoursesDto
 import dataclasses.aws.AwsProcessesDto
 import dataclasses.aws.S3BucketReader
-import db.models.CourseMechanicumDao
 import db.models.CourseRoqedDao
-import db.models.ProcessMechanicumDao
 import db.models.ProcessRoqedDao
 import kotlinx.coroutines.delay
 import org.jetbrains.exposed.sql.transactions.transaction
