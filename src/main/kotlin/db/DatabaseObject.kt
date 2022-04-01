@@ -21,8 +21,10 @@ object DatabaseObject {
     }
 
     fun migrateGeoData() {
-        SchemaUtils.drop(GeoData)
-        SchemaUtils.create(GeoData)
+        transaction {
+            SchemaUtils.drop(GeoData)
+            SchemaUtils.create(GeoData)
+        }
     }
 
     fun migrateDatabase() {

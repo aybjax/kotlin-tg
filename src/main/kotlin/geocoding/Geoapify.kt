@@ -20,8 +20,9 @@ object Geoapify {
         GeocodeApiService::class.java
     )
 
-    suspend fun getLocation(latlong: Latlong): String? {
+    suspend fun getLocation(latlong: Latlong): GeocodingResponse? {
         val response: Response<GeocodingResponse>
+
         try {
             response = geocodeApiService.reverseGeocode(latitude = latlong.latitude,
                                                         longitude = latlong.longitude,
@@ -31,9 +32,7 @@ object Geoapify {
             return null
         }
 
-        val body = response.body() ?: return null
-
-        return body.location
+        return response.body()
     }
 
     suspend fun getCoordinate(location: String): Latlong? {

@@ -89,6 +89,9 @@ object CommonRouter {
                     MechanicumRoutes.CHOOSE_MECHANICUM_COURSE_ID -> {
                         MechanicumController.chooseCourse(request)
                     }
+                    MechanicumRoutes.BEFORE_CHOOSEN_MECHANICUM_COURSE_ID -> {
+                        MechanicumController.getLocation(request)
+                    }
                     MechanicumRoutes.CHOSEN_MECHANICUM_COURSE_ID -> {
                         MechanicumController.courseChosen(request)
                     }
@@ -100,14 +103,6 @@ object CommonRouter {
                     }
                 }
             is EmptyRoutes -> false
-        }
-
-        if(request.route !is EmptyRoutes) {
-            request.user.updateRouting {
-                it.previous_query = request.route.toString()
-
-                it
-            }
         }
     }
 }

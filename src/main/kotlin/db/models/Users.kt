@@ -4,6 +4,8 @@ import com.github.kotlintelegrambot.entities.Chat
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.Moshi
+import dataclasses.geocoding.Latlong
+import dataclasses.request.Request
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -132,14 +134,29 @@ class User(id: EntityID<Int>): IntEntity(id)
      */
     @JsonClass(generateAdapter = true)
     data class Routing(
-        var previous_query: String? = null,
+        var majorPage: String? = null,
+        var expectedQuery: ExpectedQuery? = null,
         var prev_page: Long? = null,
         var course_ids: List<Int>? = null,
         var searchName: String? = null,
         var previous_input: String? = null,
         var previous_input_route: String? = null,
         var is_previous_done: Boolean = false,
-    )
+    ) {
+        @JsonClass(generateAdapter = true)
+        data class ExpectedQuery(
+            val route: String,
+            val action: Action? = null,
+            val requestType: Request.RequestType? = null,
+            val payload: Any? = null,
+        ) {
+            enum class Action {
+                SEARCH_NAME,
+                FORWARD_PAGING,
+                BACKWARDS_PAGING,
+            }
+        }
+    }
 
     /**
      * Request session/cookie like class
@@ -150,9 +167,9 @@ class User(id: EntityID<Int>): IntEntity(id)
         var next_process_order: Int? = null,
         var total_processes: Int? = null,
         var correct_processes: Int? = null,
-        var longitude: Float? = null,
-        var latitude: Float? = null,
-        var processCompletions: MutableList<ProcessCompletion> = mutableListOf<ProcessCompletion>(),
+        var latlong: Latlong? = null,
+        var location: String? = null,
+        var processCompletions: MutableList<ProcessCompletion> = mutableListOf(),
 
         ) {
         @JsonClass(generateAdapter = true)

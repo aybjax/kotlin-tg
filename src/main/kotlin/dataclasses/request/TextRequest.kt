@@ -22,7 +22,8 @@ class TextRequest(
     override val bot: Bot,
     override val chatId: ChatId,
     override val messageId: Long,
-): Request(user, bot, chatId, messageId)
+    override val type: RequestType,
+): Request(user, bot, chatId, messageId, type)
 {
     val text = text.normalizedString()
     private val greetingWords = listOf("start", "начать", "домой");
@@ -39,6 +40,7 @@ class TextRequest(
             bot,
             chatId,
             messageId,
+            requestType = this.type,
         )
     }
 
@@ -47,18 +49,40 @@ class TextRequest(
      */
     private fun getCallbackQuery(): RouteQueryPair {
         val firstWord = text.getFirstWord()
-        val previousQuery = CallbackRequest.getRouteEnumFromString(user.routing?.previous_query ?: "") ?: EmptyRoutes
+        val expectedRoute = CallbackRequest.getRouteEnumFromString(user.routing?.expectedQuery?.route ?: "") ?: EmptyRoutes
 
         if(firstWord.isEmpty()) return EmptyRoutes queries emptyMap()
 
         if(greetingWords.contains(firstWord)) return CommonRoutes.GREET_USER queries emptyMap();
 
-        MechanicumController.textToCallbackQuery(previousQuery, text, this)?.let {
-            return it
+        MechanicumController.textToCallbackQuery(expectedRoute, text, this)?.let { routeQueryPair ->
+            user.updateRouting {
+                it.expectedQuery = null
+
+                it
+            }
+
+            return routeQueryPair
         }
 
-        RoqedController.textToCallbackQuery(previousQuery, text, this)?.let {
-            return it
+        RoqedController.textToCallbackQuery(expectedRoute, text, this)?.let { routeQueryPair ->
+            user.updateRouting {
+                it.expectedQuery = null
+
+                it
+            }
+
+            return routeQueryPair
+        }
+
+        user.routing?.expectedQuery?.let {
+            writeButton("Комманда не понята.")
+        }
+
+        user.updateRouting {
+            it.expectedQuery = null
+
+            it
         }
 
         return EmptyRoutes queries emptyMap()
@@ -69,10 +93,10 @@ class TextRequest(
         /**
          * Create TextRequest from text and User ID
          */
-        fun fromTextUser(text: String, userDto: User.About, bot: Bot, chatId: ChatId, messageId: Long): TextRequest {
+        fun fromTextUser(text: String, userDto: User.About, bot: Bot, chatId: ChatId, messageId: Long, type: RequestType): TextRequest {
             val user = User.getUser(userDto)
 
-            return TextRequest(user, text, bot, chatId, messageId)
+            return TextRequest(user, text, bot, chatId, messageId, type)
         }
     }
 }

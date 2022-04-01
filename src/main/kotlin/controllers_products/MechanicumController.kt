@@ -5,6 +5,7 @@ import dataclasses.RequestPage
 import dataclasses.RouteQueryPair
 import dataclasses.queries
 import dataclasses.request.CallbackRequest
+import dataclasses.request.Request
 import dataclasses.request.TextRequest
 import db.models.CourseMechanicumDao
 import db.models.ProcessMechanicumDao
@@ -30,28 +31,6 @@ object MechanicumController {
 
         val ids = courses.map { it.id.value }
 
-        val coursesText = courses.joinToString("\n") {
-            val description = it.description
-
-            "${it.id}. <b>${it.name}</b> ${ if(description.isNotEmpty())
-                "(<pre>" else " "}$description${ if(description.isNotEmpty()) "</pre>)" else ""}\n\n"
-        }
-
-        val anchors = mutableListOf<Anchor>()
-        if(page.isNotFirstPage()) {
-            anchors.add(
-                Anchor(text = "⬅", MechanicumRoutes.MECHANICUM_COURSES queries mapOf("page" to page.prev.toString()))
-            )
-        }
-        anchors.add(
-            Anchor(text = "Выбрать \uD83C\uDD97", RouteQueryPair(MechanicumRoutes.CHOOSE_MECHANICUM_COURSE_ID))
-        )
-        if(page notLastPageFor pageCount) {
-            anchors.add(
-                Anchor(text = "➡", MechanicumRoutes.MECHANICUM_COURSES queries mapOf("page" to page.next.toString()))
-            )
-        }
-
         if(page.isFirstPage()) {
             val text = """
                 Выберите номер курса в списке ниже.
@@ -60,6 +39,51 @@ object MechanicumController {
                 Список курсов:
             """.trimIndent()
             request.writeButton(text)
+        }
+
+        courses.dropLast(1).forEach {
+            val description = it.description
+
+            val msg = "${it.id}. <b>${it.name}</b> ${ if(description.isNotEmpty())
+                "(<pre>" else " "}$description${ if(description.isNotEmpty()) "</pre>)" else ""}\n\n"
+
+            request.writeLink(
+                msg,
+                listOf(
+                    Anchor(
+                        "Выбрать",
+                        MechanicumRoutes.BEFORE_CHOOSEN_MECHANICUM_COURSE_ID queries mapOf("course_id" to it.id.toString())
+                    )
+                ),
+            )
+        }
+
+        val msg = courses.last().let {
+            val description = it.description
+
+            "${it.id}. <b>${it.name}</b> ${ if(description.isNotEmpty())
+                "(<pre>" else " "}$description${ if(description.isNotEmpty()) "</pre>)" else ""}\n\n"
+        }
+
+        val chooseBtn = listOf(
+            Anchor(
+                "Выбрать",
+                MechanicumRoutes.BEFORE_CHOOSEN_MECHANICUM_COURSE_ID queries mapOf("course_id" to courses.last().id.toString())
+            )
+        )
+
+        val anchors = mutableListOf<Anchor>()
+
+        if(page.isNotFirstPage()) {
+            anchors.add(
+                Anchor(text = "⬅", MechanicumRoutes.MECHANICUM_COURSES queries mapOf("page" to page.prev.toString()))
+            )
+        }
+
+        if(page notLastPageFor pageCount) {
+            anchors.add(
+                Anchor(text = "➡", MechanicumRoutes.MECHANICUM_COURSES queries mapOf("page" to page.next.toString()))
+            )
         }
 
         val jumpButtons = mutableListOf<Anchor>()
@@ -88,7 +112,8 @@ object MechanicumController {
             buttons.add(Anchor(text = "❌ Отменить поиск", RouteQueryPair(MechanicumRoutes.MECHANICUM_SEARCH_NAME_CANCEL)))
         }
 
-        request.writeLink(coursesText, listOf(
+        request.writeLink(msg, listOf(
+            chooseBtn,
             anchors,
             jumpButtons,
             buttons,
@@ -106,12 +131,31 @@ object MechanicumController {
 
     fun searchName(request: CallbackRequest): Boolean {
         request.writeButton("<i>Поиск по названию курса в Mechanicum:</i>")
+        request.user.updateRouting {
+            it.expectedQuery = User.Routing.ExpectedQuery(
+                route = MechanicumRoutes.MECHANICUM_COURSES.toString(),
+                action = User.Routing.ExpectedQuery.Action.SEARCH_NAME,
+                requestType = Request.RequestType.TEXT,
+            )
+
+            it
+        }
 
         return true
     }
 
     fun forwardCourses(request: CallbackRequest): Boolean {
         request.writeLink("<i>Cтраниц для перелистывания:</i>", rewindButtons)
+
+        request.user.updateRouting {
+            it.expectedQuery = User.Routing.ExpectedQuery(
+                route = MechanicumRoutes.MECHANICUM_COURSES.toString(),
+                action = User.Routing.ExpectedQuery.Action.FORWARD_PAGING,
+                requestType = Request.RequestType.TEXT,
+            )
+
+            it
+        }
 
         return true
     }
@@ -155,6 +199,7 @@ object MechanicumController {
                     bot = request.bot,
                     chatId = request.chatId,
                     messageId = request.messageId,
+                    type = Request.RequestType.TEXT,
                 ).toCallbackRequest()?.let {
                     CommonRouter.routeCallback(it)
                 }
@@ -166,6 +211,16 @@ object MechanicumController {
 
     fun backwordsCourses(request: CallbackRequest): Boolean {
         request.writeLink("<i>Cтраниц для перелистывания:</i>", rewindButtons)
+
+        request.user.updateRouting {
+            it.expectedQuery = User.Routing.ExpectedQuery(
+                route = MechanicumRoutes.MECHANICUM_COURSES.toString(),
+                action = User.Routing.ExpectedQuery.Action.BACKWARDS_PAGING,
+                requestType = Request.RequestType.TEXT,
+            )
+
+            it
+        }
 
         return true
     }
@@ -209,6 +264,7 @@ object MechanicumController {
                     bot = request.bot,
                     chatId = request.chatId,
                     messageId = request.messageId,
+                    type = Request.RequestType.TEXT,
                 ).toCallbackRequest()?.let {
                     CommonRouter.routeCallback(it)
                 }
@@ -224,18 +280,51 @@ object MechanicumController {
 
         request.writeButtons("<i>Введите номер курса</i>:", finalButtons)
 
+        request.user.updateRouting {
+            it.expectedQuery = User.Routing.ExpectedQuery(
+                route = MechanicumRoutes.CHOSEN_MECHANICUM_COURSE_ID.toString(),
+            )
+
+            it
+        }
+
         return true
     }
 
+    fun getLocation(request: CallbackRequest) {
+        request.writeButtons("""
+            <b>Курс выбран:</b>
+            Где Вы находитесь?
+        """.trimIndent(),
+            buttonTexts = listOf(listOf("Не отправлять")),
+            locationText = "Отправить локацию", addHome = true)
+
+        request.user.updateRouting {
+            it.expectedQuery = User.Routing.ExpectedQuery(
+                route = MechanicumRoutes.CHOSEN_MECHANICUM_COURSE_ID.toString(),
+                requestType = Request.RequestType.TEXT,
+                payload = request.getQuery<String>("course_id")
+            )
+
+            it
+        }
+    }
+
     fun courseChosen(request: CallbackRequest): Boolean {
+        if(request.getQuery<Int>("answer") == 1) {
+            request.writeButtons("""
+                Спасибо 👍
+            """.trimIndent())
+        }
+        else {
+            request.writeButtons("""
+                В следующий раз 😔
+            """.trimIndent())
+        }
+
         val course = transaction {
             CourseMechanicumDao.findById(request.getQuery<Int>("course_id"))
         }
-
-        request.writeButtons("""
-            <b>Курс выбран:</b>
-            Вы можете отправить Вашу геолокацию (для мобильных усстройств)
-        """.trimIndent(), locationText = "Отправить локацию")
 
         val msg = """
                             <i>Номер курса:</i> <b>${course?.id}</b>
@@ -335,11 +424,28 @@ object MechanicumController {
 
                 request.writeText("<i>Напишите причину:</i>")
 
+                request.user.updateRouting {
+                    it.expectedQuery = User.Routing.ExpectedQuery(
+                        route = MechanicumRoutes.START_MECHANICUM_COURSE.toString(),
+                        requestType = Request.RequestType.TEXT,
+                    )
+
+                    it
+                }
 
                 return true
             }
             else if(action == "comment") {
                 request.writeText("<i>Напишите комментарий:</i>")
+
+                request.user.updateRouting {
+                    it.expectedQuery = User.Routing.ExpectedQuery(
+                        route = MechanicumRoutes.START_MECHANICUM_COURSE.toString(),
+                        requestType = Request.RequestType.TEXT,
+                    )
+
+                    it
+                }
 
                 return true
             }
@@ -404,7 +510,10 @@ object MechanicumController {
             val correct = completion?.correct_processes ?: 0
             val total = completion?.total_processes ?: -1
 
-            request.writeButton("<b>Курс пройден</b>: $correct из $total правильных")
+            request.writeButton("<b>Работа завершена</b>: $correct из $total правильных")
+            request.user.completion?.location?.let {
+                request.writeButton("<b>Место прохождения</b>: $it")
+            }
             request.user.completion?.processCompletions?.filter {
                 it.status == User.Completion.CompletionStatus.FAIL
             }?.let { fails ->
@@ -517,69 +626,106 @@ object MechanicumController {
         )
     }
 
-    fun textToCallbackQuery(previousQuery: Routes, text: String, request: TextRequest): RouteQueryPair? {
-        if(previousQuery == MechanicumRoutes.MECHANICUM_SEARCH_NAME) {
-            request.user.updateRouting {
-                it.searchName = text.split(' ').joinToString("%", prefix = "%", postfix = "%")
+    fun textToCallbackQuery(expectedRoute: Routes, text: String, request: TextRequest): RouteQueryPair? {
+        val expectedQuery = request.user.routing!!.expectedQuery!!
 
-                it
+        when(expectedQuery.requestType) {
+            Request.RequestType.TEXT ->
+                if(expectedRoute == MechanicumRoutes.MECHANICUM_COURSES) {
+                    if(expectedQuery.action == User.Routing.ExpectedQuery.Action.SEARCH_NAME) {
+                        request.user.updateRouting {
+                            it.searchName = text.split(' ').joinToString("%", prefix = "%", postfix = "%")
+
+                            it
+                        }
+
+                        return MechanicumRoutes.MECHANICUM_COURSES queries emptyMap()
+                    }
+                    else if (expectedQuery.action == User.Routing.ExpectedQuery.Action.BACKWARDS_PAGING) {
+                        val page = (request.user.routing?.prev_page ?: 1) - text.toLong()
+
+                        return MechanicumRoutes.MECHANICUM_COURSES queries mapOf("page" to page.toString())
+                    }
+                    else if(expectedQuery.action == User.Routing.ExpectedQuery.Action.FORWARD_PAGING) {
+                        val page = (request.user.routing?.prev_page ?: 1) + text.toLong()
+
+                        return MechanicumRoutes.MECHANICUM_COURSES queries mapOf("page" to page.toString())
+                    }
+                }
+                else if(expectedRoute == MechanicumRoutes.CHOSEN_MECHANICUM_COURSE_ID) {
+                    // FIXME
+                    val id = (expectedQuery.payload as String).toInt()
+//                    val ids = request.user.routing?.course_ids ?: emptyList()
+
+//                    if (! ids.contains(id)) {
+//                        request.writeButton("Номер курса должны быть <b>${ids.joinToString(", ")}</b>")
+//
+//
+//                        val buttons = request.user.routing?.course_ids?.map { listOf(it.toString()) } ?: emptyList()
+//                        val finalButtons = buttons + listOf(listOf("\uD83C\uDFE0 Домой"))
+//
+//                        request.writeButtons("<i>Введите номер курса</i>:", finalButtons)
+//
+//                        return EmptyRoutes queries emptyMap()
+//                    }
+
+                    request.user.updateCompletion {
+                        val course = CourseMechanicumDao.findById(id)
+
+                        it.total_processes = course?.processesCount ?: 0
+                        it.course_id = id
+                        it.next_process_order = 1
+                        it.correct_processes = 0
+                        it.processCompletions = mutableListOf<User.Completion.ProcessCompletion>()
+
+                        it
+                    }
+
+                    return MechanicumRoutes.CHOSEN_MECHANICUM_COURSE_ID queries mapOf(
+                        "course_id" to id.toString(),
+                        "answer" to if(text == "да") "1" else "0",
+                    )
+                }
+                else if(expectedRoute == MechanicumRoutes.START_MECHANICUM_COURSE) {
+                    return MechanicumRoutes.START_MECHANICUM_COURSE queries mapOf(
+                        "action" to "comment_added",
+                        "text" to text,
+                    )
+                }
+
+            Request.RequestType.COMMAND -> {}
+//            null ->
+//                 if(expectedRoute == MechanicumRoutes.CHOSEN_MECHANICUM_COURSE_ID) {
+//                    val id = text.toInt()
+//                    val ids = request.user.routing?.course_ids ?: emptyList()
+//
+//                    if (! ids.contains(id)) {
+//                        request.writeButton("Номер курса должны быть <b>${ids.joinToString(", ")}</b>")
+//
+//
+//                        val buttons = request.user.routing?.course_ids?.map { listOf(it.toString()) } ?: emptyList()
+//                        val finalButtons = buttons + listOf(listOf("\uD83C\uDFE0 Домой"))
+//
+//                        request.writeButtons("<i>Введите номер курса</i>:", finalButtons)
+//
+//                        return EmptyRoutes queries emptyMap()
+//                    }
+//
+//                    request.user.updateCompletion {
+//                        val course = CourseMechanicumDao.findById(id)
+//
+//                        it.total_processes = course?.processesCount ?: 0
+//                        it.course_id = id
+//                        it.next_process_order = 1
+//                        it.correct_processes = 0
+//                        it.processCompletions = mutableListOf<User.Completion.ProcessCompletion>()
+//
+//                        it
+//                    }
+//
+//                    return MechanicumRoutes.CHOSEN_MECHANICUM_COURSE_ID queries mapOf("course_id" to id.toString())
+//                }
             }
-
-            return MechanicumRoutes.MECHANICUM_COURSES queries emptyMap()
-        }
-
-        if(previousQuery == MechanicumRoutes.BACKWARDS_MECHANICUM_COURSES ||
-            previousQuery == MechanicumRoutes.BACKWARDS_MECHANICUM_INPUT) {
-            val page = (request.user.routing?.prev_page ?: 1) - text.toLong()
-
-            return MechanicumRoutes.MECHANICUM_COURSES queries mapOf("page" to page.toString())
-        }
-
-        if(previousQuery == MechanicumRoutes.FORWARD_MECHANICUM_COURSES ||
-            previousQuery == MechanicumRoutes.FORWARD_MECHANICUM_INPUT) {
-            val page = (request.user.routing?.prev_page ?: 1) + text.toLong()
-
-            return MechanicumRoutes.MECHANICUM_COURSES queries mapOf("page" to page.toString())
-        }
-
-        if(previousQuery == MechanicumRoutes.CHOOSE_MECHANICUM_COURSE_ID ||
-            previousQuery == MechanicumRoutes.MECHANICUM_COURSES) {
-            val id = text.toInt()
-            val ids = request.user.routing?.course_ids ?: emptyList()
-
-            if (! ids.contains(id)) {
-                request.writeButton("Номер курса должны быть <b>${ids.joinToString(", ")}</b>")
-
-
-                val buttons = request.user.routing?.course_ids?.map { listOf(it.toString()) } ?: emptyList()
-                val finalButtons = buttons + listOf(listOf("\uD83C\uDFE0 Домой"))
-
-                request.writeButtons("<i>Введите номер курса</i>:", finalButtons)
-
-                return EmptyRoutes queries emptyMap()
-            }
-
-            request.user.updateCompletion {
-                val course = CourseMechanicumDao.findById(id)
-
-                it.total_processes = course?.processesCount ?: 0
-                it.course_id = id
-                it.next_process_order = 1
-                it.correct_processes = 0
-                it.processCompletions = mutableListOf<User.Completion.ProcessCompletion>()
-
-                it
-            }
-
-            return MechanicumRoutes.CHOSEN_MECHANICUM_COURSE_ID queries mapOf("course_id" to id.toString())
-        }
-
-        if(previousQuery == MechanicumRoutes.START_MECHANICUM_COURSE) {
-            return MechanicumRoutes.START_MECHANICUM_COURSE queries mapOf(
-                "action" to "comment_added",
-                 "text" to text,
-            )
-        }
 
         return null
     }

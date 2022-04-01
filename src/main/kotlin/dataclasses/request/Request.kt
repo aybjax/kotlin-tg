@@ -18,7 +18,12 @@ sealed class Request(
     open val bot: Bot,
     open val chatId: ChatId,
     open val messageId: Long,
+    open val type: RequestType,
 ) {
+    enum class RequestType {
+        TEXT, CALLBACK, COMMAND,
+    }
+
     /**
      * Send user markdown? text message
      */

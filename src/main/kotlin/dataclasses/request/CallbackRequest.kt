@@ -17,8 +17,9 @@ data class MechanicumCallbackRequest(
     override val bot: Bot,
     override val chatId: ChatId,
     override val messageId: Long,
+    override var type: RequestType,
     override var needPadding: Boolean = true,
-): CallbackRequest(user, route, queries, bot, chatId, messageId, needPadding)
+): CallbackRequest(user, route, queries, bot, chatId, messageId, type, needPadding)
 data class RoqedCallbackRequest(
     override val user: User,
     override var route: Routes,
@@ -26,8 +27,9 @@ data class RoqedCallbackRequest(
     override val bot: Bot,
     override val chatId: ChatId,
     override val messageId: Long,
+    override var type: RequestType,
     override var needPadding: Boolean = true,
-): CallbackRequest(user, route, queries, bot, chatId, messageId, needPadding)
+): CallbackRequest(user, route, queries, bot, chatId, messageId, type, needPadding)
 data class DimedusCallbackRequest(
     override val user: User,
     override var route: Routes,
@@ -35,8 +37,9 @@ data class DimedusCallbackRequest(
     override val bot: Bot,
     override val chatId: ChatId,
     override val messageId: Long,
+    override var type: RequestType,
     override var needPadding: Boolean = true,
-): CallbackRequest(user, route, queries, bot, chatId, messageId, needPadding)
+): CallbackRequest(user, route, queries, bot, chatId, messageId, type, needPadding)
 data class AcademixCallbackRequest(
     override val user: User,
     override var route: Routes,
@@ -44,8 +47,9 @@ data class AcademixCallbackRequest(
     override val bot: Bot,
     override val chatId: ChatId,
     override val messageId: Long,
+    override var type: RequestType,
     override var needPadding: Boolean = true,
-): CallbackRequest(user, route, queries, bot, chatId, messageId, needPadding)
+): CallbackRequest(user, route, queries, bot, chatId, messageId, type, needPadding)
 data class CommonCallbackRequest(
     override val user: User,
     override var route: Routes,
@@ -53,8 +57,9 @@ data class CommonCallbackRequest(
     override val bot: Bot,
     override val chatId: ChatId,
     override val messageId: Long,
+    override var type: RequestType,
     override var needPadding: Boolean = true,
-): CallbackRequest(user, route, queries, bot, chatId, messageId, needPadding)
+): CallbackRequest(user, route, queries, bot, chatId, messageId, type, needPadding)
 
 /**
  * Main Request Object
@@ -67,8 +72,9 @@ sealed class CallbackRequest(
     override val bot: Bot,
     override val chatId: ChatId,
     override val messageId: Long,
+    override var type: RequestType,
     open var needPadding: Boolean = true,
-): Request(user, bot, chatId, messageId){
+): Request(user, bot, chatId, messageId, type){
     /**
      * Get query ?a=b as specific nullable type
      */
@@ -114,6 +120,7 @@ sealed class CallbackRequest(
                     bot = bot,
                     chatId = chatId,
                     messageId = messageId,
+                    type = this.type,
                     needPadding = needPadding,
             )
             is RoqedRoutes -> RoqedCallbackRequest(
@@ -123,6 +130,7 @@ sealed class CallbackRequest(
                     bot = bot,
                     chatId = chatId,
                     messageId = messageId,
+                    type = this.type,
                     needPadding = needPadding,
             )
             is DimedusRoutes -> DimedusCallbackRequest(
@@ -132,6 +140,7 @@ sealed class CallbackRequest(
                     bot = bot,
                     chatId = chatId,
                     messageId = messageId,
+                    type = this.type,
                     needPadding = needPadding,
             )
             is AcademixRoutes -> AcademixCallbackRequest(
@@ -141,6 +150,7 @@ sealed class CallbackRequest(
                     bot = bot,
                     chatId = chatId,
                     messageId = messageId,
+                    type = this.type,
                     needPadding = needPadding,
             )
             is CommonRoutes -> CommonCallbackRequest(
@@ -150,6 +160,7 @@ sealed class CallbackRequest(
                     bot = bot,
                     chatId = chatId,
                     messageId = messageId,
+                    type = this.type,
                     needPadding = needPadding,
             )
             is EmptyRoutes -> null
@@ -166,10 +177,11 @@ sealed class CallbackRequest(
         /**
          * Create CallbackRequest with userId
          */
-        fun fromCallbackUser(callbackQuery: String, userDto: User.About, bot: Bot, chatId: ChatId, messageId: Long): CallbackRequest? {
+        fun fromCallbackUser(callbackQuery: String, userDto: User.About, bot: Bot, chatId: ChatId, messageId: Long,
+                             type: RequestType): CallbackRequest? {
             val user = User.getUser(userDto)
 
-            return fromCallback(callbackQuery, user, bot, chatId, messageId);
+            return fromCallback(callbackQuery, user, bot, chatId, messageId, type);
         }
 
         fun getRouteEnumFromString(route: String): Routes? {
@@ -219,7 +231,7 @@ sealed class CallbackRequest(
         /**
          * Create CallbackRequest with User object
          */
-        fun fromCallback(callbackQuery: String, user: User, bot: Bot, chatId: ChatId, messageId: Long): CallbackRequest? {
+        fun fromCallback(callbackQuery: String, user: User, bot: Bot, chatId: ChatId, messageId: Long, requestType: RequestType): CallbackRequest? {
             val (route, query) = parseRoute(callbackQuery)
             val routeEnum = getRouteEnumFromString(route) ?: return null
 
@@ -243,6 +255,7 @@ sealed class CallbackRequest(
                     bot,
                     chatId,
                     messageId,
+                    requestType,
                     needPadding,
                 )
                 is CommonRoutes -> CommonCallbackRequest(
@@ -252,6 +265,7 @@ sealed class CallbackRequest(
                     bot,
                     chatId,
                     messageId,
+                    requestType,
                     needPadding,
                 )
                 is DimedusRoutes -> DimedusCallbackRequest(
@@ -261,6 +275,7 @@ sealed class CallbackRequest(
                     bot,
                     chatId,
                     messageId,
+                    requestType,
                     needPadding,
                 )
                 is MechanicumRoutes -> MechanicumCallbackRequest(
@@ -270,6 +285,7 @@ sealed class CallbackRequest(
                     bot,
                     chatId,
                     messageId,
+                    requestType,
                     needPadding,
                 )
                 is RoqedRoutes -> RoqedCallbackRequest(
@@ -279,6 +295,7 @@ sealed class CallbackRequest(
                     bot,
                     chatId,
                     messageId,
+                    requestType,
                     needPadding,
                 )
                 is EmptyRoutes -> null
