@@ -4,7 +4,6 @@ import com.github.kotlintelegrambot.dispatcher.*
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.logging.LogLevel
 import controllers.GeoController
-import dataclasses.geocoding.GeocodingResponse
 import dataclasses.geocoding.Latlong
 import variables.DatabaseTelegramEnvVars
 import db.DatabaseObject
@@ -13,15 +12,8 @@ import kotlinx.coroutines.runBlocking
 import dataclasses.request.CallbackRequest
 import dataclasses.request.Request
 import dataclasses.request.TextRequest
-import geocoding.Geoapify
-import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import routes.CommonRouter
 import routes.Layout
-import routes.enums.CommonRoutes
-import variables.GeocodingApiVars
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.concurrent.thread
@@ -85,10 +77,20 @@ fun main(args: Array<String>) = runBlocking {
                 ).toCallbackRequest()?.let { request ->
                     thread(start = true) {
                         runBlocking {
-                            GeoController.getLocation(request, Latlong(
+                            val latlong = Latlong(
                                 latitude = location.latitude.toDouble(),
                                 longitude = location.longitude.toDouble(),
-                            ))
+                            )
+                            val location = GeoController.getLocation(request, latlong)
+
+                            if(location.isNotEmpty()) {
+                                request.user.updateCompletion {
+                                    it.location = location
+                                    it.latlong = latlong
+
+                                    it
+                                }
+                            }
                         }
                     }
 

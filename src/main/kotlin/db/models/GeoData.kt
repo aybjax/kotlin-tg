@@ -88,16 +88,18 @@ class GeoDataDao(id: EntityID<Int>): IntEntity(id)
 
             if(datas.isEmpty()) return null
 
-            var distance  = -1.0
+            var distance  = Double.MAX_VALUE
             var datum by Delegates.notNull<GeoDataDao>()
 
             datas.forEach { geodata ->
                 val d = geodata distanceTo latlong
-                if(d > distance) {
+                if(d < distance) {
                     distance = d
                     datum = geodata
                 }
             }
+
+            if(distance > RADIUS) return null
 
             return datum.location
         }

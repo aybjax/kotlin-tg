@@ -19,15 +19,6 @@ object GeoController {
 
         GeoDataDao.setLocation(latlong, property)
 
-        if(property.location.isNotEmpty()) {
-            request.user.updateCompletion {
-                it.location = property.location
-                it.latlong = latlong
-
-                it
-            }
-        }
-
         return property.location
     }
 }

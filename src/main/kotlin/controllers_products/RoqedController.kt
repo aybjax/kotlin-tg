@@ -1,5 +1,18 @@
 package controllers_products
 
+import com.github.kotlintelegrambot.entities.TelegramFile
+import com.itextpdf.io.font.FontProgramFactory
+import com.itextpdf.kernel.colors.Color
+import com.itextpdf.kernel.colors.ColorConstants
+import com.itextpdf.kernel.font.PdfFontFactory
+import com.itextpdf.kernel.pdf.PdfDocument
+import com.itextpdf.kernel.pdf.PdfWriter
+import com.itextpdf.layout.Document
+import com.itextpdf.layout.element.Paragraph
+import com.itextpdf.layout.element.Table
+import com.itextpdf.layout.element.Text
+import com.itextpdf.layout.properties.HorizontalAlignment
+import com.itextpdf.layout.properties.TextAlignment
 import dataclasses.Anchor
 import dataclasses.RequestPage
 import dataclasses.RouteQueryPair
@@ -7,18 +20,22 @@ import dataclasses.queries
 import dataclasses.request.CallbackRequest
 import dataclasses.request.Request
 import dataclasses.request.TextRequest
-import db.models.*
+import db.models.CourseRoqedDao
+import db.models.ProcessRoqedDao
+import db.models.Processes_Roqed
+import db.models.User
 import extensions.plusOne
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
 import routes.CommonRouter
-import routes.enums.EmptyRoutes
 import routes.enums.RoqedRoutes
 import routes.enums.Routes
+import java.io.File
+
 
 object RoqedController {
     /**
-     * List roqed courses: search by name and paginate
+     * List mechanicum courses: search by name and paginate
      */
     fun listCourses(request: CallbackRequest): Boolean {
         val (courses, page, pageCount) = CourseRoqedDao.getCoursePageCount(
@@ -28,28 +45,6 @@ object RoqedController {
 
         val ids = courses.map { it.id.value }
 
-        val coursesText = courses.joinToString("\n") {
-            val description = it.description
-
-            "${it.id}. <b>${it.name}</b> ${ if(description.isNotEmpty())
-                "(<pre>" else " "}$description${ if(description.isNotEmpty()) "</pre>)" else ""}\n\n"
-        }
-
-        val anchors = mutableListOf<Anchor>()
-        if(page.isNotFirstPage()) {
-            anchors.add(
-                Anchor(text = "⬅", RoqedRoutes.ROQED_COURSES queries mapOf("page" to page.prev.toString()))
-            )
-        }
-        anchors.add(
-            Anchor(text = "Выбрать \uD83C\uDD97", RouteQueryPair(RoqedRoutes.CHOOSE_ROQED_COURSE_ID))
-        )
-        if(page notLastPageFor pageCount) {
-            anchors.add(
-                Anchor(text = "➡", RoqedRoutes.ROQED_COURSES queries mapOf("page" to page.next.toString()))
-            )
-        }
-
         if(page.isFirstPage()) {
             val text = """
                 Выберите номер курса в списке ниже.
@@ -58,6 +53,51 @@ object RoqedController {
                 Список курсов:
             """.trimIndent()
             request.writeButton(text)
+        }
+
+        courses.dropLast(1).forEach {
+            val description = it.description
+
+            val msg = "${it.id}. <b>${it.name}</b> ${ if(description.isNotEmpty())
+                "(<pre>" else " "}$description${ if(description.isNotEmpty()) "</pre>)" else ""}\n\n"
+
+            request.writeLink(
+                msg,
+                listOf(
+                    Anchor(
+                        "Выбрать",
+                        RoqedRoutes.BEFORE_CHOOSEN_ROQED_COURSE_ID queries mapOf("course_id" to it.id.toString())
+                    )
+                ),
+            )
+        }
+
+        val msg = courses.last().let {
+            val description = it.description
+
+            "${it.id}. <b>${it.name}</b> ${ if(description.isNotEmpty())
+                "(<pre>" else " "}$description${ if(description.isNotEmpty()) "</pre>)" else ""}\n\n"
+        }
+
+        val chooseBtn = listOf(
+            Anchor(
+                "Выбрать",
+                RoqedRoutes.BEFORE_CHOOSEN_ROQED_COURSE_ID queries mapOf("course_id" to courses.last().id.toString())
+            )
+        )
+
+        val anchors = mutableListOf<Anchor>()
+
+        if(page.isNotFirstPage()) {
+            anchors.add(
+                Anchor(text = "⬅", RoqedRoutes.ROQED_COURSES queries mapOf("page" to page.prev.toString()))
+            )
+        }
+
+        if(page notLastPageFor pageCount) {
+            anchors.add(
+                Anchor(text = "➡", RoqedRoutes.ROQED_COURSES queries mapOf("page" to page.next.toString()))
+            )
         }
 
         val jumpButtons = mutableListOf<Anchor>()
@@ -86,7 +126,8 @@ object RoqedController {
             buttons.add(Anchor(text = "❌ Отменить поиск", RouteQueryPair(RoqedRoutes.ROQED_SEARCH_NAME_CANCEL)))
         }
 
-        request.writeLink(coursesText, listOf(
+        request.writeLink(msg, listOf(
+            chooseBtn,
             anchors,
             jumpButtons,
             buttons,
@@ -106,7 +147,7 @@ object RoqedController {
         request.writeButton("<i>Поиск по названию курса в Roqed:</i>")
         request.user.updateRouting {
             it.expectedQuery = User.Routing.ExpectedQuery(
-                route = RoqedRoutes.ROQED_SEARCH_NAME.toString(),
+                route = RoqedRoutes.ROQED_COURSES.toString(),
                 action = User.Routing.ExpectedQuery.Action.SEARCH_NAME,
                 requestType = Request.RequestType.TEXT,
             )
@@ -122,7 +163,7 @@ object RoqedController {
 
         request.user.updateRouting {
             it.expectedQuery = User.Routing.ExpectedQuery(
-                route = RoqedRoutes.ROQED_SEARCH_NAME.toString(),
+                route = RoqedRoutes.ROQED_COURSES.toString(),
                 action = User.Routing.ExpectedQuery.Action.FORWARD_PAGING,
                 requestType = Request.RequestType.TEXT,
             )
@@ -187,7 +228,7 @@ object RoqedController {
 
         request.user.updateRouting {
             it.expectedQuery = User.Routing.ExpectedQuery(
-                route = RoqedRoutes.ROQED_SEARCH_NAME.toString(),
+                route = RoqedRoutes.ROQED_COURSES.toString(),
                 action = User.Routing.ExpectedQuery.Action.BACKWARDS_PAGING,
                 requestType = Request.RequestType.TEXT,
             )
@@ -255,7 +296,7 @@ object RoqedController {
 
         request.user.updateRouting {
             it.expectedQuery = User.Routing.ExpectedQuery(
-                route = RoqedRoutes.ROQED_SEARCH_NAME.toString(),
+                route = RoqedRoutes.CHOSEN_ROQED_COURSE_ID.toString(),
             )
 
             it
@@ -264,15 +305,40 @@ object RoqedController {
         return true
     }
 
+    fun getLocation(request: CallbackRequest) {
+        request.writeButtons("""
+            <b>Курс выбран:</b>
+            Где Вы находитесь?
+        """.trimIndent(),
+            buttonTexts = listOf(listOf("Не отправлять")),
+            locationText = "Отправить локацию", addHome = true)
+
+        request.user.updateRouting {
+            it.expectedQuery = User.Routing.ExpectedQuery(
+                route = RoqedRoutes.CHOSEN_ROQED_COURSE_ID.toString(),
+                requestType = Request.RequestType.TEXT,
+                payload = request.getQuery<String>("course_id")
+            )
+
+            it
+        }
+    }
+
     fun courseChosen(request: CallbackRequest): Boolean {
+        if(request.getQuery<Int>("answer") == 1) {
+            request.writeButtons("""
+                Спасибо 👍
+            """.trimIndent())
+        }
+        else {
+            request.writeButtons("""
+                В следующий раз 😔
+            """.trimIndent())
+        }
+
         val course = transaction {
             CourseRoqedDao.findById(request.getQuery<Int>("course_id"))
         }
-
-        request.writeButtons("""
-            <b>Курс выбран:</b>
-            Вы можете отправить Вашу геолокацию (для мобильных усстройств)
-        """.trimIndent(), locationText = "Отправить локацию")
 
         val msg = """
                             <i>Номер курса:</i> <b>${course?.id}</b>
@@ -372,6 +438,14 @@ object RoqedController {
 
                 request.writeText("<i>Напишите причину:</i>")
 
+                request.user.updateRouting {
+                    it.expectedQuery = User.Routing.ExpectedQuery(
+                        route = RoqedRoutes.START_ROQED_COURSE.toString(),
+                        requestType = Request.RequestType.TEXT,
+                    )
+
+                    it
+                }
 
                 return true
             }
@@ -381,6 +455,7 @@ object RoqedController {
                 request.user.updateRouting {
                     it.expectedQuery = User.Routing.ExpectedQuery(
                         route = RoqedRoutes.START_ROQED_COURSE.toString(),
+                        requestType = Request.RequestType.TEXT,
                     )
 
                     it
@@ -419,6 +494,8 @@ object RoqedController {
                 }
 
                 if(currentCompletion?.processCompletions?.last()?.status == User.Completion.CompletionStatus.PENDING) {
+                    request.writeButton("Ваш комментарий записан \uD83D\uDC4D")
+
                     return true
                 }
 
@@ -500,6 +577,128 @@ object RoqedController {
 
                 it
             }
+
+            val course = transaction {
+                CourseRoqedDao.findById(courseId)
+            }
+
+
+            val fontProgramThick = FontProgramFactory.createFont("asset/font/normal.ttf")
+            val fontThick = PdfFontFactory.createFont(fontProgramThick)
+            val fontProgramThin = FontProgramFactory.createFont("asset/font/regular.ttf")
+            val fontThin = PdfFontFactory.createFont(fontProgramThin)
+
+            val filename = "${request.user.userId}.pdf"
+            val pdfWriter = PdfWriter(filename)
+            val pdfDocument = PdfDocument(pdfWriter)
+            pdfDocument.addNewPage()
+
+            val document = Document(pdfDocument)
+
+            val paragraph1 = Paragraph("""
+                Прохождение курса ${course?.name ?: ""}
+                ${request.user.about?.firstName ?: ""} ${request.user.about?.lastName ?: ""} (${request.user.about?.username ?: ""})
+            """.trimIndent())
+            paragraph1.setFont(fontThick)
+            paragraph1.setTextAlignment(TextAlignment.CENTER)
+            paragraph1.setFontSize(22f)
+            document.add(paragraph1)
+
+            request.user.completion?.location?.let {
+                val paragraph = Paragraph();
+                val text1 = Text("Место прохождения: ")
+                text1.setFont(fontThick)
+                val text2 = Text(it)
+                text2.setFont(fontThin)
+                text2.setFontColor(ColorConstants.BLACK)
+                paragraph.add(text1)
+                paragraph.add(text2)
+                document.add(paragraph)
+            }
+
+
+            val paragraph2 = Paragraph();
+            val text1 = Text("Сделано:")
+            text1.setFont(fontThick)
+            val text2 = Text(" $correct из $total")
+            text2.setFont(fontThin)
+            text2.setFontColor(ColorConstants.BLACK)
+            paragraph2.add(text1)
+            paragraph2.add(text2)
+            document.add(paragraph2)
+
+            request.user.completion?.processCompletions?.filter {
+                it.status == User.Completion.CompletionStatus.FAIL
+            }?.let { fails ->
+                if(fails.isNotEmpty()) {
+                    val paragraph2 = Paragraph("""
+                        Пропущенные процессы
+                    """.trimIndent())
+                    paragraph2.setMarginTop(25f)
+                    paragraph2.setFont(fontThick)
+                    paragraph2.setTextAlignment(TextAlignment.CENTER)
+                    paragraph2.setFontSize(18f)
+                    document.add(paragraph2)
+
+                    val table = Table(2)
+                    table.addHeaderCell("Название процесса")
+                    table.addHeaderCell("Комментарий")
+                    table.header.setFont(fontThick)
+                    table.setFont(fontThin)
+                    table.setFontColor(ColorConstants.BLACK)
+
+                    fails.forEach {
+                        if (!it.comment.isNullOrBlank()) {
+                            table.addCell("${it.process_order}. ${it.process_name}");
+                            table.addCell("${it.comment?.split('\n')?.joinToString("\n") ?: ""}");
+                        }
+
+                        document.add(table)
+                    }
+                }
+            }
+
+            request.user.completion?.processCompletions?.filterNot {
+                it.status == User.Completion.CompletionStatus.FAIL ||
+                        it.comment.isNullOrBlank()
+            }?.let { withComments ->
+                if(withComments.isNotEmpty()) {
+
+                    val paragraph2 = Paragraph("""
+                        Оставили комментарий
+                    """.trimIndent())
+                    paragraph2.setMarginTop(25f)
+                    paragraph2.setFontSize(18f)
+                    paragraph2.setTextAlignment(TextAlignment.CENTER)
+                    paragraph2.setFont(fontThick)
+                    document.add(paragraph2)
+
+                    val table = Table(2)
+                    table.addHeaderCell("Название процесса")
+                    table.addHeaderCell("Комментарий")
+                    table.header.setFont(fontThick)
+                    table.setFont(fontThin)
+                    table.setFontColor(ColorConstants.BLACK)
+
+                    withComments.forEach {
+                        if (!it.comment.isNullOrBlank()) {
+                            table.addCell("${it.process_order}. ${it.process_name}");
+                            table.addCell("${it.comment?.split('\n')?.joinToString("\n") ?: ""}");
+                        }
+                    }
+
+                    document.add(table)
+
+                }
+            }
+
+
+            document.close()
+
+            request.bot.sendDocument(request.chatId,
+                TelegramFile.ByFile(File(filename)),
+                caption = "Ваши результаты")
+            File(filename).delete()
         }
         else {
             val msg = """
@@ -539,7 +738,6 @@ object RoqedController {
         return false
     }
 
-
     val rewindButtons: List<List<Anchor>> by lazy {
         listOf(
             listOf(
@@ -570,8 +768,8 @@ object RoqedController {
 
         when(expectedQuery.requestType) {
             Request.RequestType.TEXT ->
-                if(expectedRoute == RoqedRoutes.ROQED_COURSES) {
-                    if(expectedQuery.action == User.Routing.ExpectedQuery.Action.SEARCH_NAME) {
+                if (expectedRoute == RoqedRoutes.ROQED_COURSES) {
+                    if (expectedQuery.action == User.Routing.ExpectedQuery.Action.SEARCH_NAME) {
                         request.user.updateRouting {
                             it.searchName = text.split(' ').joinToString("%", prefix = "%", postfix = "%")
 
@@ -579,33 +777,18 @@ object RoqedController {
                         }
 
                         return RoqedRoutes.ROQED_COURSES queries emptyMap()
-                    }
-                    else if (expectedQuery.action == User.Routing.ExpectedQuery.Action.BACKWARDS_PAGING) {
+                    } else if (expectedQuery.action == User.Routing.ExpectedQuery.Action.BACKWARDS_PAGING) {
                         val page = (request.user.routing?.prev_page ?: 1) - text.toLong()
 
                         return RoqedRoutes.ROQED_COURSES queries mapOf("page" to page.toString())
-                    }
-                    else if(expectedQuery.action == User.Routing.ExpectedQuery.Action.FORWARD_PAGING) {
+                    } else if (expectedQuery.action == User.Routing.ExpectedQuery.Action.FORWARD_PAGING) {
                         val page = (request.user.routing?.prev_page ?: 1) + text.toLong()
 
                         return RoqedRoutes.ROQED_COURSES queries mapOf("page" to page.toString())
                     }
-                }
-                else if(expectedRoute == RoqedRoutes.CHOSEN_ROQED_COURSE_ID) {
-                    val id = text.toInt()
-                    val ids = request.user.routing?.course_ids ?: emptyList()
-
-                    if (! ids.contains(id)) {
-                        request.writeButton("Номер курса должны быть <b>${ids.joinToString(", ")}</b>")
-
-
-                        val buttons = request.user.routing?.course_ids?.map { listOf(it.toString()) } ?: emptyList()
-                        val finalButtons = buttons + listOf(listOf("\uD83C\uDFE0 Домой"))
-
-                        request.writeButtons("<i>Введите номер курса</i>:", finalButtons)
-
-                        return EmptyRoutes queries emptyMap()
-                    }
+                } else if (expectedRoute == RoqedRoutes.CHOSEN_ROQED_COURSE_ID) {
+                    // FIXME
+                    val id = (expectedQuery.payload as String).toInt()
 
                     request.user.updateCompletion {
                         val course = CourseRoqedDao.findById(id)
@@ -619,9 +802,11 @@ object RoqedController {
                         it
                     }
 
-                    return RoqedRoutes.CHOSEN_ROQED_COURSE_ID queries mapOf("course_id" to id.toString())
-                }
-                else if(expectedRoute == RoqedRoutes.START_ROQED_COURSE) {
+                    return RoqedRoutes.CHOSEN_ROQED_COURSE_ID queries mapOf(
+                        "course_id" to id.toString(),
+                        "answer" to if (text == "да") "1" else "0",
+                    )
+                } else if (expectedRoute == RoqedRoutes.START_ROQED_COURSE) {
                     return RoqedRoutes.START_ROQED_COURSE queries mapOf(
                         "action" to "comment_added",
                         "text" to text,
@@ -629,37 +814,6 @@ object RoqedController {
                 }
 
             Request.RequestType.COMMAND -> {}
-            null ->
-                if(expectedRoute == RoqedRoutes.CHOSEN_ROQED_COURSE_ID) {
-                    val id = text.toInt()
-                    val ids = request.user.routing?.course_ids ?: emptyList()
-
-                    if (! ids.contains(id)) {
-                        request.writeButton("Номер курса должны быть <b>${ids.joinToString(", ")}</b>")
-
-
-                        val buttons = request.user.routing?.course_ids?.map { listOf(it.toString()) } ?: emptyList()
-                        val finalButtons = buttons + listOf(listOf("\uD83C\uDFE0 Домой"))
-
-                        request.writeButtons("<i>Введите номер курса</i>:", finalButtons)
-
-                        return EmptyRoutes queries emptyMap()
-                    }
-
-                    request.user.updateCompletion {
-                        val course = CourseRoqedDao.findById(id)
-
-                        it.total_processes = course?.processesCount ?: 0
-                        it.course_id = id
-                        it.next_process_order = 1
-                        it.correct_processes = 0
-                        it.processCompletions = mutableListOf<User.Completion.ProcessCompletion>()
-
-                        it
-                    }
-
-                    return RoqedRoutes.CHOSEN_ROQED_COURSE_ID queries mapOf("course_id" to id.toString())
-                }
         }
 
         return null
