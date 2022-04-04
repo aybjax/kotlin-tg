@@ -19,6 +19,7 @@ import java.time.format.DateTimeFormatter
 import kotlin.concurrent.thread
 import kotlin.properties.Delegates
 
+
 fun main(args: Array<String>) = runBlocking {
     DatabaseTelegramEnvVars.checkArgs()
 
