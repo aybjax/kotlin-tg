@@ -36,34 +36,37 @@ object CommonRouter {
                 }
             is RoqedRoutes -> when(request.route as RoqedRoutes) {
                     RoqedRoutes.ROQED_COURSES -> {
-                        RoqedController.listCourses(request)
+                        MechanicumController.listCourses(request)
                     }
                     RoqedRoutes.ROQED_SEARCH_NAME -> {
-                        RoqedController.searchName(request)
+                        MechanicumController.searchName(request)
                     }
                     RoqedRoutes.FORWARD_ROQED_COURSES -> {
-                        RoqedController.forwardCourses(request)
+                        MechanicumController.forwardCourses(request)
                     }
                     RoqedRoutes.FORWARD_ROQED_INPUT -> {
-                        RoqedController.forwardInput(request)
+                        MechanicumController.forwardInput(request)
                     }
                     RoqedRoutes.BACKWARDS_ROQED_COURSES -> {
-                        RoqedController.backwordsCourses(request)
+                        MechanicumController.backwordsCourses(request)
                     }
                     RoqedRoutes.BACKWARDS_ROQED_INPUT -> {
-                        RoqedController.backwordsInput(request)
+                        MechanicumController.backwordsInput(request)
                     }
                     RoqedRoutes.CHOOSE_ROQED_COURSE_ID -> {
-                        RoqedController.chooseCourse(request)
+                        MechanicumController.chooseCourse(request)
+                    }
+                    RoqedRoutes.BEFORE_CHOOSEN_ROQED_COURSE_ID -> {
+                        MechanicumController.getLocation(request)
                     }
                     RoqedRoutes.CHOSEN_ROQED_COURSE_ID -> {
-                        RoqedController.courseChosen(request)
+                        MechanicumController.courseChosen(request)
                     }
                     RoqedRoutes.START_ROQED_COURSE -> {
-                        RoqedController.startCourse(request)
+                        MechanicumController.startCourse(request)
                     }
                     RoqedRoutes.ROQED_SEARCH_NAME_CANCEL -> {
-                        RoqedController.cancelSearch(request)
+                        MechanicumController.cancelSearch(request)
                     }
                 }
 
